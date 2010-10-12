@@ -10,10 +10,11 @@ from django.template import loader, Context, Template
 from django.contrib.sites.models import Site
 from django.db.models import signals
 from django.contrib import admin
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
 
 from feincms.models import Base
 from feincms.management.checker import check_database_schema
-from feincms.admin import editor
 
 import exceptions
 import hashlib
@@ -30,7 +31,6 @@ class Newsletter(Base):
     from_email = models.EmailField(verbose_name="Von E-Mail Adresse")
     from_name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
     reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
-    content = models.TextField()
     
     #ga tracking
     utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
@@ -43,20 +43,26 @@ class Newsletter(Base):
             
     def __unicode__(self):
         return self.name
+        
+    # def check_links(self):
+    #     """
+    #     Searches al links in content sections
+    #     """
+    #     for content in self.content.main:
+            
     
     # def get_template(self):
     #     return Template('{%% extends "newsletter/email.html" %%}{%% block newscontainer %%}%s{%% endblock %%}' % (self.content,))
 
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
-class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
-    list_display = ('subject', 'from_email',)
-    raw_id_fields = []
-    #inlines = (NewsletterLinkInline,)
-
 
 class NewsletterLink(models.Model):
     newsletter = models.ForeignKey(Newsletter)
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    newsletter_content = generic.GenericForeignKey('content_type', 'object_id')
+
     link_hash = models.CharField(max_length=32, blank=True)
     link_target = models.CharField(verbose_name="Adresse", max_length=500)
     click_count = models.IntegerField(default=0)
@@ -69,18 +75,58 @@ class NewsletterLink(models.Model):
             self.link_hash = hashlib.md5(str(self.id)+str(random.random())).hexdigest()
         super(NewsletterLink, self).save(**kwargs)
 
-class NewsletterReceiver(object):
+class NewsletterReceiverMixin(object):
     """
     Abstract baseclass for every object that can receive a newsletter
-    """
-    class Meta:
-        abstract = True
-    
+    """    
     def get_email(self):
         if hasattr(self,'email'):
             return self.email
         raise exceptions.NotImplementedError('Need a get_email implementation.')
-            
+
+class NewsletterJobUnitMixin(object):
+    """
+    Abstract baseclass for every object which can be target of a NewsletterJob
+    """    
+    def create_newsletter(self):
+        """
+        Creates a newsletter for every NewsletterReceiverMixin
+        """
+        job = NewsletterJob(group_object=self)
+        job.save()
+        job.create_mails()
+        return job
+    
+    def get_newsletter_receivers(self):
+        """
+        Tries to get a queryset named client or participants bevore giving up.
+        """
+        queryset = getattr(self, 'clients', None)
+        if queryset:
+            return queryset
+        queryset = getattr(self, 'participants', None)
+        if queryset:
+            return queryset
+        raise exeptions.NotImplementedError("Didn't find any subset, you need to implement get_newsletter_receivers yourselfe.")
+
+class NewsletterJobUnitAdmin(admin.ModelAdmin):
+    change_form_template = "admin/newsletter/jobunit/change_form.html"
+    
+    def create_newsletter(self, request, object_id):
+        from django.shortcuts import get_object_or_404
+        obj = get_object_or_404(self.model, pk=object_id)
+        job = obj.create_newsletter()
+        return HttpResponseRedirect(reverse('admin:newsletter_newsletterjob_change', args=(job.id,)))
+    
+    def get_urls(self):
+        from django.conf.urls.defaults import patterns
+        urls = super(NewsletterJobUnitAdmin, self).get_urls()
+        my_urls = patterns('',
+            (r'^(?P<object_id>\d+)/create_newsletter/$', self.admin_site.admin_view(self.create_newsletter))
+        )
+        return my_urls + urls
+        
+
 
 class NewsletterJob(models.Model):
     """A bunch of participants wich receive a newsletter"""
@@ -88,6 +134,10 @@ class NewsletterJob(models.Model):
     status = models.IntegerField(choices=((1,'Draft'),(2,'Pending'),(3,'Sending'),(4,'Finished'),(5,'Error'),), default=1)
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
     date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Finished", default=None)
+
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    group_object = generic.GenericForeignKey('content_type', 'object_id')
     
     #ga tracking
     utm_campaign = models.SlugField(verbose_name="Utm Campaign")
@@ -112,19 +162,25 @@ class NewsletterJob(models.Model):
     def viewed(self):
         return str(self.mails.filter(viewed=True).count())
     viewed.short_description = '# of views'
-            
+    
+    def _can_send(self):
+        return True
+        # return True if self.status == 1 or self.status == 5 else False
+    can_send = property(_can_send)
+
     
     def create_mails(self):
-        if not self.event == None:
-            for participant in self.event.participants.all():
-                self.mails.add(NewsletterMail(person=participant))
-        if not self.group == None:
-            for customer in self.group.customers.all():
-                self.mails.add(NewsletterMail(person=customer))
+        """
+        Create mails for every NewsletterReceiverMixin in self.group_object.
+        """
+        if not hasattr(self.group_object, 'get_newsletter_receivers'):
+            raise exceptions.NotImplementedError('Object needs to implement get_newsletter_receivers')
+        for receiver in self.group_object.get_newsletter_receivers():
+            self.mails.add(NewsletterMail(person=receiver))
     
     def send(self):
-        if self.status != 1 and self.status != 5:
-            return
+        if not self.can_send():
+            raise exceptions.Exception('Can only send jobs in status 1 or 5')
         self.status = 3
         self.date_deliver_start = datetime.datetime.now()
         self.save()
@@ -166,23 +222,13 @@ class NewsletterMail(models.Model):
         self.sent = True
         self.save()
 
-    def get_message(self, template, event, group):
-        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.ping', args=[self.mail_hash,'',])
+    def get_message(self):
 
-        weblink = _("To view this email as a web page, click [here]")
-        url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.view', args=[self.mail_hash])
-        weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
-        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.landing', args=[self.mail_hash])
-
-        content = template.render(Context({
-            'NEWSLETTER_URL': settings.NEWSLETTER_URL,
-            'person': self.person,
-            'event': event,
-            'group': group,
-            'pingback_url': pingback_url,
-            'weblink':weblink,
-            'landing_page_url':landing_page_url,
-        }))
+        newsletter = Newsletter.objects.filter(pk=newsletter_id)[0]
+        return render_to_response(newsletter.template.path, {
+            'newsletter' : newsletter,
+            }, self.getcontent(), context_instance=RequestContext(request))
+        
         if self.job.newsletter.reply_email!='':
             headers={'Reply-To': self.job.newsletter.reply_email}
         else:
@@ -198,10 +244,18 @@ class NewsletterMail(models.Model):
         return message
     
     def get_content(self):
-        template = self.job.newsletter.get_template()
-        return template.render(Context({
+        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.ping', args=[self.mail_hash,'',])
+
+        weblink = _("To view this email as a web page, click [here]")
+        url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.view', args=[self.mail_hash])
+        weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
+        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.landing', args=[self.mail_hash])
+        
+        return {
             'NEWSLETTER_URL': settings.NEWSLETTER_URL,
             'person': self.person,
-            'event': self.job.event,
-            'group': self.job.group,
-        }))
+            'group_object': self.job.group_object,
+            'pingback_url': pingback_url,
+            'weblink':weblink,
+            'landing_page_url':landing_page_url,
+        }

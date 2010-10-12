@@ -1,0 +1,117 @@
+{% load feincms_tags %}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>{% block title %}Generic Newsletter{% endblock %}</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+{% block style %}
+<style type="text/css">
+body {
+  margin-top: 0px;
+}
+
+a {
+  color: #D2220B;
+  text-decoration:underline;
+}
+.content, table, tr, td {
+  font-size: 12px;
+  font-family: Arial;
+  color: #000000;
+}  
+.title {
+  font-family: Arial;
+  font-size: 18px;
+  color: #41a2d2; 
+  text-align: left;
+}
+.Bold {
+  font-family: Arial;
+  font-size: 12px;
+  font-weight: bold;
+  color: #000000; 
+}
+.titleNav {
+  font-family: Arial;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #003270; 
+  text-align: left;
+}
+
+a:hover {
+  color:#d52b1e;
+  text-decoration:none;
+}
+
+.label {
+  font-family: Arial;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #000000; 
+  text-align: left;
+}
+.errorLabel {
+  font-family: Arial;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #FF0000; 
+  text-align: left;
+}
+#borderTable td {	
+  border: 1px solid #999999;
+}
+h1 {
+    font-weight: normal;
+    color: #39a8df;
+    font-size:31px;
+
+}
+{% block style_extra %}
+{% endblock %}
+</style>
+{% endblock %}
+</head>
+<body background="{{NEWSLETTER_URL}}bg.jpg">
+<table width="100%" height="99%" cellpadding="0" cellspacing="0" border="0">
+    {% if weblink %}
+        <tr>
+            <td align="center" valign="top">
+            	<span class="content"><span style='font-size:11px;'>{{weblink|safe}}</span><span>
+            </td> 
+        </tr>
+    {% endif %}
+    </tr>
+    <tr>
+        <td align="center" valign="top">
+            <table cellpadding="0" cellspacing="0" width="500" border="0" bgcolor="#FFFFFF">
+            	<tr>
+                	<td valign="top"><img src="{% if pingback_url %}{{pingback_url}}{% else %}{{NEWSLETTER_URL}}{% endif %}header.jpg" border="0" width="500"><br><br></td>
+            	</tr>
+            	<tr>
+                    <td valign="top">
+                    	<table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    	<tr>
+                    		<td width="15"><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="15"></td>
+                    		<td width="7" {$color}><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="7"></td>
+                    		<td colspan="2" {$color} style="padding: 4px 0px 5px 10px;">
+                    		    {% feincms_render_region newsletter "main" request %}
+                    		</td>
+                    		<td width="7" {$color}><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="7"></td>
+                    		<td width="17"><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="17"></td>
+                    	</tr>
+                      </table>
+                    </td>
+            	</tr>
+            	<tr>
+            	    <td valign="top"><img src="{{NEWSLETTER_URL}}spacer.gif" border="0" width="500" height="20"><br><br></td>
+            	</tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
