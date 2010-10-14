@@ -12,6 +12,7 @@ from django.db.models import signals
 from django.contrib import admin
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
+from django.core.validators import email_re
 
 from feincms.models import Base
 from feincms.management.checker import check_database_schema
@@ -43,6 +44,12 @@ class Newsletter(Base):
             
     def __unicode__(self):
         return self.name
+    
+    def is_valid(self):
+        if self.subject == '':
+            return False
+        # todo: check if email is valid
+        return True
         
     # def check_links(self):
     #     """
@@ -55,25 +62,6 @@ class Newsletter(Base):
     #     return Template('{%% extends "newsletter/email.html" %%}{%% block newscontainer %%}%s{%% endblock %%}' % (self.content,))
 
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
-
-
-class NewsletterLink(models.Model):
-    newsletter = models.ForeignKey(Newsletter)
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    newsletter_content = generic.GenericForeignKey('content_type', 'object_id')
-
-    link_hash = models.CharField(max_length=32, blank=True)
-    link_target = models.CharField(verbose_name="Adresse", max_length=500)
-    click_count = models.IntegerField(default=0)
-    
-    def __unicode__(self):
-        return self.link_target
-    
-    def save(self, **kwargs):
-        if self.link_hash == u'':
-            self.link_hash = hashlib.md5(str(self.id)+str(random.random())).hexdigest()
-        super(NewsletterLink, self).save(**kwargs)
 
 class NewsletterReceiverMixin(object):
     """
@@ -163,11 +151,15 @@ class NewsletterJob(models.Model):
         return str(self.mails.filter(viewed=True).count())
     viewed.short_description = '# of views'
     
-    def _can_send(self):
-        return True
-        # return True if self.status == 1 or self.status == 5 else False
-    can_send = property(_can_send)
+    def can_send(self):
+        if self.status != 1 and self.status != 5:
+            return False
+        return self.is_valid()
 
+    def is_valid(self):
+        if self.newsletter == None or not self.newsletter.is_valid():
+            return False
+        return True
     
     def create_mails(self):
         """
@@ -180,13 +172,13 @@ class NewsletterJob(models.Model):
     
     def send(self):
         if not self.can_send():
-            raise exceptions.Exception('Can only send jobs in status 1 or 5')
+            raise exceptions.Exception('This job is not valid')
         self.status = 3
         self.date_deliver_start = datetime.datetime.now()
         self.save()
-        template = self.newsletter.get_template()
         try:
             connection = mail.get_connection()
+            connection.open()
             for newsletter_mail in self.mails.filter(sent=False):
                 connection.send_messages([newsletter_mail.get_message(template, self.event, self.group)])
                 newsletter_mail.mark_sent()
@@ -197,6 +189,21 @@ class NewsletterJob(models.Model):
             self.status = 4
             self.date_deliver_finished = datetime.datetime.now()
         self.save()
+        
+
+class NewsletterLink(models.Model):
+    job = models.ForeignKey(NewsletterJob)
+    link_hash = models.CharField(max_length=32, blank=True)
+    link_target = models.CharField(verbose_name="Adresse", max_length=500)
+    click_count = models.IntegerField(default=0)
+
+    def __unicode__(self):
+        return self.link_target
+
+    def save(self, **kwargs):
+        if self.link_hash == u'':
+            self.link_hash = hashlib.md5(str(self.id)+str(random.random())).hexdigest()
+        super(NewsletterLink, self).save(**kwargs)
 
 class NewsletterMail(models.Model):
     """
@@ -221,6 +228,16 @@ class NewsletterMail(models.Model):
     def mark_sent(self):
         self.sent = True
         self.save()
+    
+    def is_valid(self):
+        """
+        Checks if this Mail is valid
+        """
+        return email_re.match(self.person.get_email())
+
+    def get_email(self):
+        return self.person.get_email()
+    get_email.short_description = "E-Mail"
 
     def get_message(self):
 

@@ -15,33 +15,35 @@ class NewsletterLinkInline(admin.TabularInline):
     max_num = 0
     can_delete = False
 
+
+class NewsletterMailInline(admin.TabularInline):
+    model = NewsletterMail
+    max_num = 0
+    fields = ('get_email',)
+    readonly_fields = ('get_email',)
+
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     list_display = ('__unicode__', 'subject', 'from_email',)
     show_on_top = ('subject', 'from_email', 'from_name', 'reply_email')
     raw_id_fields = []
-    # inlines = (NewsletterLinkInline,)
-
-def send_job(modeladmin, request, queryset):
-    class NewsletterSender(threading.Thread):
-        """Thread to scan all Folders"""
-        def run(self):
-            for obj in queryset:
-                obj.send()
-    
-    s=NewsletterSender()
-    s.start()
-send_job.short_description = "Deploy"
 
 class NewsletterJobAdmin(admin.ModelAdmin):
-    actions = (send_job,)
     date_hierarchy = 'date_deliver_start'
     list_display = ('newsletter', 'status', 'total_mails', 'delivery_status', 'viewed',)
     list_filter   = ('status', 'newsletter',)
     fields = ('newsletter', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)
     readonly_fields = ('status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)    
-
+    inlines = (NewsletterLinkInline, NewsletterMailInline,)
+    
+    def get_readonly_fields(self, request, obj):
+        if obj.status == 1:
+            return self.readonly_fields
+        else:
+            return self.readonly_fields + ('newsletter',)
+        
     def send_newsletter(self, request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
+        obj.send()
         return HttpResponseRedirect(reverse('admin:newsletter_newsletterjob_change', args=(obj.id,)))
     
     def change_view(self, request, object_id, extra_context={}):
