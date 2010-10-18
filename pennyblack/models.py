@@ -6,16 +6,19 @@ from django.core.urlresolvers import reverse
 from django.utils import translation
 from django.core import mail
 from django.conf import settings
-from django.template import loader, Context, Template
+from django.template import loader, Context, Template, RequestContext
 from django.contrib.sites.models import Site
 from django.db.models import signals
 from django.contrib import admin
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpRequest
 from django.core.validators import email_re
+from django.shortcuts import render_to_response
+
 
 from feincms.models import Base
 from feincms.management.checker import check_database_schema
+from feincms.utils import copy_model_instance
 
 import exceptions
 import hashlib
@@ -28,6 +31,7 @@ class Newsletter(Base):
     """A newsletter with subject and content
     can contain multiple jobs with mails to send"""
     name = models.CharField(verbose_name="Name", help_text="Wird nur intern verwendet.", max_length=100)
+    active = models.BooleanField(default=True)
     subject = models.CharField(verbose_name="Betreff", max_length=250)
     from_email = models.EmailField(verbose_name="Von E-Mail Adresse")
     from_name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
@@ -50,6 +54,14 @@ class Newsletter(Base):
             return False
         # todo: check if email is valid
         return True
+    
+    def create_snapshot(self):
+        snapshot = copy_model_instance(self, exclude=('id',))
+        snapshot.active = False
+        snapshot.save()
+        snapshot.copy_content_from(self)
+        return snapshot
+        
         
     # def check_links(self):
     #     """
@@ -152,6 +164,7 @@ class NewsletterJob(models.Model):
     viewed.short_description = '# of views'
     
     def can_send(self):
+        print self.status
         if self.status != 1 and self.status != 5:
             return False
         return self.is_valid()
@@ -173,6 +186,7 @@ class NewsletterJob(models.Model):
     def send(self):
         if not self.can_send():
             raise exceptions.Exception('This job is not valid')
+        self.newsletter = self.newsletter.create_snapshot()
         self.status = 3
         self.date_deliver_start = datetime.datetime.now()
         self.save()
@@ -180,7 +194,7 @@ class NewsletterJob(models.Model):
             connection = mail.get_connection()
             connection.open()
             for newsletter_mail in self.mails.filter(sent=False):
-                connection.send_messages([newsletter_mail.get_message(template, self.event, self.group)])
+                connection.send_messages([newsletter_mail.get_message()])
                 newsletter_mail.mark_sent()
             connection.close()
         except:
@@ -241,10 +255,10 @@ class NewsletterMail(models.Model):
 
     def get_message(self):
 
-        newsletter = Newsletter.objects.filter(pk=newsletter_id)[0]
+        newsletter = self.job.newsletter
         return render_to_response(newsletter.template.path, {
             'newsletter' : newsletter,
-            }, self.getcontent(), context_instance=RequestContext(request))
+            }, self.get_content(), context_instance=RequestContext(HttpRequest()))
         
         if self.job.newsletter.reply_email!='':
             headers={'Reply-To': self.job.newsletter.reply_email}
@@ -261,15 +275,16 @@ class NewsletterMail(models.Model):
         return message
     
     def get_content(self):
-        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.ping', args=[self.mail_hash,'',])
+        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('newsletter.ping', args=[self.mail_hash,'',])
 
         weblink = _("To view this email as a web page, click [here]")
-        url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.view', args=[self.mail_hash])
+        url = "http://" + Site.objects.all()[0].domain + reverse('newsletter.view', args=[self.mail_hash])
         weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
-        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('event.newsletter.landing', args=[self.mail_hash])
+        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('newsletter.landing', args=[self.mail_hash])
         
         return {
-            'NEWSLETTER_URL': settings.NEWSLETTER_URL,
+            # todo: newsletter url konzept aendern
+            'NEWSLETTER_URL': 'asdf',#settings.NEWSLETTER_URL,
             'person': self.person,
             'group_object': self.job.group_object,
             'pingback_url': pingback_url,

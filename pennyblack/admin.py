@@ -1,4 +1,4 @@
-from newsletter.models import Newsletter, NewsletterJob, NewsletterMail, NewsletterLink
+from pennyblack.models import Newsletter, NewsletterJob, NewsletterMail, NewsletterLink
 
 from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
