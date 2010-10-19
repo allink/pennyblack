@@ -13,7 +13,7 @@ from django.contrib import admin
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect, HttpRequest
 from django.core.validators import email_re
-from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
 from django.core.mail.utils import DNS_NAME
 
 
@@ -123,7 +123,7 @@ class NewsletterJobUnitAdmin(admin.ModelAdmin):
         from django.shortcuts import get_object_or_404
         obj = get_object_or_404(self.model, pk=object_id)
         job = obj.create_newsletter()
-        return HttpResponseRedirect(reverse('admin:newsletter_newsletterjob_change', args=(job.id,)))
+        return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(job.id,)))
     
     def get_urls(self):
         from django.conf.urls.defaults import patterns
@@ -139,6 +139,7 @@ class NewsletterJob(models.Model):
     """A bunch of participants wich receive a newsletter"""
     newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True)
     status = models.IntegerField(choices=((1,'Draft'),(2,'Pending'),(3,'Sending'),(4,'Finished'),(5,'Error'),), default=1)
+    date_created = models.DateTimeField(verbose_name="Created", default=datetime.datetime.now())
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
     date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Finished", default=None)
 
@@ -151,7 +152,7 @@ class NewsletterJob(models.Model):
     
     
     class Meta:
-        ordering = ('newsletter', 'status',)
+        ordering = ('date_created',)
         verbose_name = "Newsletter delivery task"
         verbose_name_plural = "Newsletter delivery tasks"
         
@@ -171,7 +172,6 @@ class NewsletterJob(models.Model):
     viewed.short_description = '# of views'
     
     def can_send(self):
-        print self.status
         if self.status != 1 and self.status != 5:
             return False
         return self.is_valid()
@@ -197,18 +197,18 @@ class NewsletterJob(models.Model):
         self.status = 3
         self.date_deliver_start = datetime.datetime.now()
         self.save()
-        try:
-            connection = mail.get_connection()
-            connection.open()
-            for newsletter_mail in self.mails.filter(sent=False):
-                connection.send_messages([newsletter_mail.get_message()])
-                newsletter_mail.mark_sent()
-            connection.close()
-        except:
-            self.status = 5
-        else:
-            self.status = 4
-            self.date_deliver_finished = datetime.datetime.now()
+        # try:
+        connection = mail.get_connection()
+        connection.open()
+        for newsletter_mail in self.mails.filter(sent=False):
+            connection.send_messages([newsletter_mail.get_message()])
+            newsletter_mail.mark_sent()
+        connection.close()
+        # except:
+        #     self.status = 5
+        # else:
+        #     self.status = 4
+        #     self.date_deliver_finished = datetime.datetime.now()
         self.save()
         
 
@@ -261,11 +261,11 @@ class NewsletterMail(models.Model):
     get_email.short_description = "E-Mail"
 
     def get_message(self):
-
         newsletter = self.job.newsletter
-        return render_to_response(newsletter.template.path, {
-            'newsletter' : newsletter,
-            }, self.get_content(), context_instance=RequestContext(HttpRequest()))
+        context = self.get_context()
+        context['newsletter'] = newsletter
+        content = render_to_string(newsletter.template.path,
+            context, context_instance=RequestContext(HttpRequest()))
         
         if self.job.newsletter.reply_email!='':
             headers={'Reply-To': self.job.newsletter.reply_email}
@@ -281,13 +281,13 @@ class NewsletterMail(models.Model):
         message.content_subtype = "html"
         return message
     
-    def get_content(self):
-        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('newsletter.ping', args=[self.mail_hash,'',])
+    def get_context(self):
+        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.ping', args=[self.mail_hash,'',])
 
         weblink = _("To view this email as a web page, click [here]")
-        url = "http://" + Site.objects.all()[0].domain + reverse('newsletter.view', args=[self.mail_hash])
+        url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.view', args=[self.mail_hash])
         weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
-        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('newsletter.landing', args=[self.mail_hash])
+        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.landing', args=[self.mail_hash])
         
         return {
             # todo: newsletter url konzept aendern

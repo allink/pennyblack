@@ -1,4 +1,4 @@
-from newsletter.models import Newsletter, NewsletterReceiverMixin, NewsletterMail
+from pennyblack.models import Newsletter, NewsletterReceiverMixin, NewsletterMail
 from django.db import models
 import unittest
 

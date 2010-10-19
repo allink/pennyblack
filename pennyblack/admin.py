@@ -29,7 +29,7 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
 
 class NewsletterJobAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
-    list_display = ('newsletter', 'status', 'total_mails', 'delivery_status', 'viewed',)
+    list_display = ('newsletter', 'status', 'total_mails', 'delivery_status', 'viewed', 'date_created')
     list_filter   = ('status', 'newsletter',)
     fields = ('newsletter', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)
     readonly_fields = ('status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)    
@@ -44,7 +44,7 @@ class NewsletterJobAdmin(admin.ModelAdmin):
     def send_newsletter(self, request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
         obj.send()
-        return HttpResponseRedirect(reverse('admin:newsletter_newsletterjob_change', args=(obj.id,)))
+        return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(obj.id,)))
     
     def change_view(self, request, object_id, extra_context={}):
         obj = get_object_or_404(self.model, pk=object_id)

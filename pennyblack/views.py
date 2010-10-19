@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-from newsletter.models import Newsletter, NewsletterLink, NewsletterMail
+from pennyblack.models import Newsletter, NewsletterLink, NewsletterMail
 
 def preview(request, newsletter_id):
     """
@@ -38,7 +38,7 @@ def view(request, mail_hash):
     mail=mail[0]
     mail.viewed=True
     mail.save()
-    return HttpResponse(mail.get_content())
+    return HttpResponse(mail.get_context())
 
 
 def landing(request, mail_hash):
