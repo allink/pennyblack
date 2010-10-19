@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect, HttpRequest
 from django.core.validators import email_re
 from django.shortcuts import render_to_response
+from django.core.mail.utils import DNS_NAME
 
 
 from feincms.models import Base
@@ -25,6 +26,8 @@ import hashlib
 import random
 import sys
 import datetime
+import spf
+import socket
 
       
 class Newsletter(Base):
@@ -61,6 +64,10 @@ class Newsletter(Base):
         snapshot.save()
         snapshot.copy_content_from(self)
         return snapshot
+    
+    def check_spf(self):
+        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.from_email,h=DNS_NAME.get_fqdm())
+        
         
         
     # def check_links(self):
