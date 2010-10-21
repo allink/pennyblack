@@ -1,18 +1,7 @@
 from django.db import models
 
 from pennyblack.models import Newsletter, NewsletterReceiverMixin, NewsletterJobUnitMixin
-
-class TextContent(models.Model):
-
-    text = models.TextField('Text', blank=True)
-
-    class Meta:
-        abstract = True
-        verbose_name = 'Text'
-        verbose_name_plural = 'Texte'
-
-    def render(self, **kwargs):
-        return self.text
+from pennyblack.content.richtext import RichTextContent
 
 Newsletter.register_templates({
     'key': 'base',
@@ -23,7 +12,7 @@ Newsletter.register_templates({
         ),
     })
     
-Newsletter.create_content_type(TextContent)
+Newsletter.create_content_type(RichTextContent)
 
 class Group(models.Model, NewsletterJobUnitMixin):
     name = models.CharField(max_length=20)

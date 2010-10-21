@@ -26,9 +26,15 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     list_display = ('__unicode__', 'subject', 'from_email',)
     show_on_top = ('subject', 'from_email', 'from_name', 'reply_email')
     raw_id_fields = []
+    
+    def queryset(self, request):
+          qs = super(NewsletterAdmin, self).queryset(request)
+          return qs.filter(active=True)
+    
 
 class NewsletterJobAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
+    actions = None
     list_display = ('newsletter', 'status', 'total_mails', 'delivery_status', 'viewed', 'date_created')
     list_filter   = ('status', 'newsletter',)
     fields = ('newsletter', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)

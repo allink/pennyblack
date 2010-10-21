@@ -67,19 +67,16 @@ class Newsletter(Base):
     
     def check_spf(self):
         return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.from_email,h=DNS_NAME.get_fqdm())
-        
-        
-        
-    # def check_links(self):
-    #     """
-    #     Searches al links in content sections
-    #     """
-    #     for content in self.content.main:
-            
     
-    # def get_template(self):
-    #     return Template('{%% extends "newsletter/email.html" %%}{%% block newscontainer %%}%s{%% endblock %%}' % (self.content,))
-
+    def replace_links(self, job):
+        """
+        Searches al links in content sections
+        """
+        for cls in self._feincms_content_types:
+            for content in cls.objects.filter(parent=self):
+                content.replace_links(job)
+                content.save()
+    
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 class NewsletterReceiverMixin(object):
@@ -117,7 +114,7 @@ class NewsletterJobUnitMixin(object):
         raise exeptions.NotImplementedError("Didn't find any subset, you need to implement get_newsletter_receivers yourselfe.")
 
 class NewsletterJobUnitAdmin(admin.ModelAdmin):
-    change_form_template = "admin/newsletter/jobunit/change_form.html"
+    change_form_template = "admin/pennyblack/jobunit/change_form.html"
     
     def create_newsletter(self, request, object_id):
         from django.shortcuts import get_object_or_404
@@ -137,7 +134,7 @@ class NewsletterJobUnitAdmin(admin.ModelAdmin):
 
 class NewsletterJob(models.Model):
     """A bunch of participants wich receive a newsletter"""
-    newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True)
+    newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True, limit_choices_to = {'active': True})
     status = models.IntegerField(choices=((1,'Draft'),(2,'Pending'),(3,'Sending'),(4,'Finished'),(5,'Error'),), default=1)
     date_created = models.DateTimeField(verbose_name="Created", default=datetime.datetime.now())
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
@@ -158,6 +155,11 @@ class NewsletterJob(models.Model):
         
     def __unicode__(self):
         return (self.newsletter.subject if self.newsletter is not None else "unasigned NewsletterJob")
+    
+    def delete(self, *args, **kwargs):
+        if self.newsletter.active == False:
+            self.newsletter.delete()
+        super(NewsletterJob, self).delete(*args, **kwargs)
     
     def total_mails(self):
         return str(self.mails.count())
@@ -190,25 +192,34 @@ class NewsletterJob(models.Model):
         for receiver in self.group_object.get_newsletter_receivers():
             self.mails.add(NewsletterMail(person=receiver))
     
+    def add_link(self, link):
+        """
+        Adds a link and returns a replacement link
+        """
+        link = NewsletterLink(link_target=link, job=self)
+        link.save()
+        return link.link_hash
+    
     def send(self):
         if not self.can_send():
             raise exceptions.Exception('This job is not valid')
         self.newsletter = self.newsletter.create_snapshot()
+        self.newsletter.replace_links(self)
         self.status = 3
         self.date_deliver_start = datetime.datetime.now()
         self.save()
-        # try:
-        connection = mail.get_connection()
-        connection.open()
-        for newsletter_mail in self.mails.filter(sent=False):
-            connection.send_messages([newsletter_mail.get_message()])
-            newsletter_mail.mark_sent()
-        connection.close()
-        # except:
-        #     self.status = 5
-        # else:
-        #     self.status = 4
-        #     self.date_deliver_finished = datetime.datetime.now()
+        try:
+            connection = mail.get_connection()
+            connection.open()
+            for newsletter_mail in self.mails.filter(sent=False):
+                connection.send_messages([newsletter_mail.get_message()])
+                newsletter_mail.mark_sent()
+            connection.close()
+        except:
+            self.status = 5
+        else:
+            self.status = 4
+            self.date_deliver_finished = datetime.datetime.now()
         self.save()
         
 
