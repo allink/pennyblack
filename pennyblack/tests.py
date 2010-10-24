@@ -1,4 +1,4 @@
-from pennyblack.models import Newsletter, NewsletterReceiverMixin, NewsletterMail
+from pennyblack.models import Newsletter, NewsletterReceiverMixin, Mail
 from pennyblack.content.models import RichTextContent
 from django.db import models
 import unittest
@@ -13,12 +13,12 @@ class NewsletterTestCase(unittest.TestCase):
         n.subject = 'some text'
         self.assertTrue(n.is_valid(), "Newsletter should be valid now.")
 
-# class NewsletterMailTest(unittest.TestCase):
+# class MailTest(unittest.TestCase):
 #     receiver = None
 #     mail = None
 #     def setUp(self):
 #         receiver = NewsletterReceiver()
-#         mail = NewsletterMail(person=self.receiver)
+#         mail = Mail(person=self.receiver)
 #     
 #     def test_is_valid(self):
 #         self.assertFalse(self.mail.is_valid())

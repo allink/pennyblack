@@ -9,5 +9,5 @@ urlpatterns = patterns('',
     
     (r'^admin/', include(admin.site.urls)),
     
-    url(r'^newsletter/', include('pennyblack.urls'), name = 'newsletter'),
+    url(r'^newsletter/', include('pennyblack.urls'), name = 'pennyblack'),
 )

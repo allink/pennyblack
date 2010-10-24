@@ -3,8 +3,9 @@ from django.db.models import F
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.core.exceptions import ObjectDoesNotExist
 
-from pennyblack.models import Newsletter, NewsletterLink, NewsletterMail
+from pennyblack.models import Newsletter, Link, Mail
 
 def preview(request, newsletter_id):
     """
@@ -19,11 +20,17 @@ def redirect_link(request, mail_hash, link_hash):
     """
     Redirects to the link target and marks this mail as read
     """
-    NewsletterLink.objects.filter(link_hash=link_hash).update(click_count=F('click_count')+1)
-    NewsletterMail.objects.filter(mail_hash=mail_hash).update(viewed=True)
+    Link.objects.filter(link_hash=link_hash).update(click_count=F('click_count')+1)
+    Mail.objects.filter(mail_hash=mail_hash).update(viewed=True)
+    try:
+        link = Link.objects.get(link_hash=link_hash)
+        return HttpResponseRedirect(link.link_target)
+    except ObjectDoesNotExist:
+        return HttpResponseRedirect('/')
+    
 
 def ping(request, mail_hash, path):
-    mail = NewsletterMail.objects.filter(mail_hash=mail_hash)
+    mail = Mail.objects.filter(mail_hash=mail_hash)
     if mail.count()>0:
         mail = mail[0]
         mail.viewed=True
@@ -32,24 +39,10 @@ def ping(request, mail_hash, path):
 
 
 def view(request, mail_hash):
-    mail = NewsletterMail.objects.filter(mail_hash=mail_hash)
+    mail = Mail.objects.filter(mail_hash=mail_hash)
     if mail.count() != 1:
         return HttpResponseRedirect('/')
     mail=mail[0]
     mail.viewed=True
     mail.save()
     return HttpResponse(mail.get_context())
-
-
-def landing(request, mail_hash):
-    mail = NewsletterMail.objects.filter(mail_hash=mail_hash)
-    if mail.count() != 1:
-        return HttpResponseRedirect('/')
-    mail = mail[0]
-    if type(mail.person) == type(Customer()):
-        mail.person.done=True
-        mail.person.save()
-        request.session['customer_id'] = mail.person.id
-        link = '/#!/' + settings.EVENTS_PAGE_URL[translation.get_language()] + '/' + str(mail.job.group.event.id) + '/'
-        return HttpResponseRedirect(link)        
-    return HttpResponseRedirect('/')

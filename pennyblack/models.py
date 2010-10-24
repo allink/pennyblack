@@ -21,6 +21,8 @@ from feincms.models import Base
 from feincms.management.checker import check_database_schema
 from feincms.utils import copy_model_instance
 
+from Mailman.Bouncers.BouncerAPI import ScanMessages
+
 import exceptions
 import hashlib
 import random
@@ -28,6 +30,8 @@ import sys
 import datetime
 import spf
 import socket
+import poplib
+import email
 
       
 class Newsletter(Base):
@@ -35,10 +39,10 @@ class Newsletter(Base):
     can contain multiple jobs with mails to send"""
     name = models.CharField(verbose_name="Name", help_text="Wird nur intern verwendet.", max_length=100)
     active = models.BooleanField(default=True)
+    sender = models.ForeignKey('Sender', verbose_name="Absender")
     subject = models.CharField(verbose_name="Betreff", max_length=250)
-    from_email = models.EmailField(verbose_name="Von E-Mail Adresse")
-    from_name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
     reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
+    language = models.CharField(max_length=6, verbose_name="Sprache", choices=settings.LANGUAGES)
     
     #ga tracking
     utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
@@ -64,10 +68,7 @@ class Newsletter(Base):
         snapshot.save()
         snapshot.copy_content_from(self)
         return snapshot
-    
-    def check_spf(self):
-        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.from_email,h=DNS_NAME.get_fqdm())
-    
+        
     def replace_links(self, job):
         """
         Searches al links in content sections
@@ -190,15 +191,15 @@ class NewsletterJob(models.Model):
         if not hasattr(self.group_object, 'get_newsletter_receivers'):
             raise exceptions.NotImplementedError('Object needs to implement get_newsletter_receivers')
         for receiver in self.group_object.get_newsletter_receivers():
-            self.mails.add(NewsletterMail(person=receiver))
+            self.mails.add(Mail(person=receiver))
     
     def add_link(self, link):
         """
         Adds a link and returns a replacement link
         """
-        link = NewsletterLink(link_target=link, job=self)
+        link = Link(link_target=link, job=self)
         link.save()
-        return link.link_hash
+        return "http://" + Site.objects.all()[0].domain + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{person.mail_hash}}','link_hash':link.link_hash})
     
     def send(self):
         if not self.can_send():
@@ -209,6 +210,7 @@ class NewsletterJob(models.Model):
         self.date_deliver_start = datetime.datetime.now()
         self.save()
         try:
+            translation.activate(self.newsletter.language)
             connection = mail.get_connection()
             connection.open()
             for newsletter_mail in self.mails.filter(sent=False):
@@ -217,13 +219,14 @@ class NewsletterJob(models.Model):
             connection.close()
         except:
             self.status = 5
+            raise
         else:
             self.status = 4
             self.date_deliver_finished = datetime.datetime.now()
         self.save()
         
 
-class NewsletterLink(models.Model):
+class Link(models.Model):
     job = models.ForeignKey(NewsletterJob)
     link_hash = models.CharField(max_length=32, blank=True)
     link_target = models.CharField(verbose_name="Adresse", max_length=500)
@@ -235,13 +238,14 @@ class NewsletterLink(models.Model):
     def save(self, **kwargs):
         if self.link_hash == u'':
             self.link_hash = hashlib.md5(str(self.id)+str(random.random())).hexdigest()
-        super(NewsletterLink, self).save(**kwargs)
+        super(Link, self).save(**kwargs)
 
-class NewsletterMail(models.Model):
+class Mail(models.Model):
     """
     This is a single Mail, it's part of a NewsletterJob
     """
     viewed = models.BooleanField(default=False)
+    bounced = models.BooleanField(default=False)
     sent = models.BooleanField(default=False)
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
@@ -255,7 +259,7 @@ class NewsletterMail(models.Model):
     def save(self, **kwargs):
         if self.mail_hash == u'':
             self.mail_hash = hashlib.md5(str(self.id)+str(random.random())).hexdigest()
-        super(NewsletterMail, self).save(**kwargs)
+        super(Mail, self).save(**kwargs)
     
     def mark_sent(self):
         self.sent = True
@@ -285,7 +289,7 @@ class NewsletterMail(models.Model):
         message = mail.EmailMessage(
             self.job.newsletter.subject,
             content,
-            self.job.newsletter.from_email,
+            self.job.newsletter.sender.email,
             [self.person.email],
             headers=headers,
         )
@@ -298,7 +302,6 @@ class NewsletterMail(models.Model):
         weblink = _("To view this email as a web page, click [here]")
         url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.view', args=[self.mail_hash])
         weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
-        landing_page_url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.landing', args=[self.mail_hash])
         
         return {
             # todo: newsletter url konzept aendern
@@ -307,5 +310,42 @@ class NewsletterMail(models.Model):
             'group_object': self.job.group_object,
             'pingback_url': pingback_url,
             'weblink':weblink,
-            'landing_page_url':landing_page_url,
         }
+
+class Sender(models.Model):
+    email = models.EmailField(verbose_name="Von E-Mail Adresse")
+    name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
+    pop_username = models.CharField(verbose_name="Pop3 Username", max_length=100, blank=True)
+    pop_password = models.CharField(verbose_name="Pop3 Passwort", max_length=100, blank=True)
+    pop_server = models.CharField(verbose_name="Pop3 Server", max_length=100, blank=True)
+    pop_port = models.IntegerField(verbose_name="Pop3 Port", max_length=100, default=110)
+    
+    def __unicode__(self):
+        return self.email
+    
+    def check_spf(self):
+        """
+        Check if sender is authorised by sender policy framework
+        """
+        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
+    
+    def spf_result(self):
+        return self.check_spf()
+    check_spf.short_description = "spf Result"
+    
+    def get_mail(self):
+        conn = poplib.POP3(self.pop_server, self.pop_port)
+        conn.user(self.pop_username)
+        conn.pass_(self.pop_password)
+        (numMessages, totalSize) = conn.stat()
+        print 'messages '+str(numMessages)
+        print 'size '+str(totalSize)
+        for i in range(1,numMessages+1):
+            (comment, lines, octets) = conn.retr(i)
+            lines.append('')
+            data = '\n'.join(lines)
+            mime = email.message_from_string(data)
+            print ScanMessages(None, mime)
+        conn.quit()
+        
+    
