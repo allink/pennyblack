@@ -109,3 +109,8 @@ INSTALLED_APPS = (
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+TINYMCE_JS_URL = MEDIA_URL + 'javascript/tiny_mce/tiny_mce.js'
+# TINYMCE_CONFIG_URL = 'admin/tiny_mce_config.html'
+# TINYMCE_CONTENT_CSS_URL = MEDIA_URL + 'stylesheets/tiny_mce.css'
+# TINYMCE_LINK_LIST_URL = '/admin/javascript/tiny_mce_links.js'
+
