@@ -1,117 +1,212 @@
 {% load feincms_tags %}
+{% if webview %}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
 <title>{% block title %}Generic Newsletter{% endblock %}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-{% block style %}
-<style type="text/css">
-body {
-  margin-top: 0px;
-}
 
-a {
-  color: #D2220B;
-  text-decoration:underline;
-}
-.content, table, tr, td {
-  font-size: 12px;
-  font-family: Arial;
-  color: #000000;
-}  
-.title {
-  font-family: Arial;
-  font-size: 18px;
-  color: #41a2d2; 
-  text-align: left;
-}
-.Bold {
-  font-family: Arial;
-  font-size: 12px;
-  font-weight: bold;
-  color: #000000; 
-}
-.titleNav {
-  font-family: Arial;
-  font-size: 13px;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: #003270; 
-  text-align: left;
-}
-
-a:hover {
-  color:#d52b1e;
-  text-decoration:none;
-}
-
-.label {
-  font-family: Arial;
-  font-size: 11px;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: #000000; 
-  text-align: left;
-}
-.errorLabel {
-  font-family: Arial;
-  font-size: 10px;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: #FF0000; 
-  text-align: left;
-}
-#borderTable td {	
-  border: 1px solid #999999;
-}
-h1 {
-    font-weight: normal;
-    color: #39a8df;
-    font-size:31px;
-
-}
-{% block style_extra %}
-{% endblock %}
-</style>
-{% endblock %}
 </head>
-<body background="{{NEWSLETTER_URL}}bg.jpg">
-<table width="100%" height="99%" cellpadding="0" cellspacing="0" border="0">
-    {% if weblink %}
-        <tr>
-            <td align="center" valign="top">
-            	<span class="content"><span style='font-size:11px;'>{{weblink|safe}}</span><span>
-            </td> 
-        </tr>
-    {% endif %}
-    </tr>
-    <tr>
-        <td align="center" valign="top">
-            <table cellpadding="0" cellspacing="0" width="500" border="0" bgcolor="#FFFFFF">
-            	<tr>
-                	<td valign="top"><img src="{% if pingback_url %}{{pingback_url}}{% else %}{{NEWSLETTER_URL}}{% endif %}header.jpg" border="0" width="500"><br><br></td>
-            	</tr>
-            	<tr>
-                    <td valign="top">
-                    	<table width="100%" cellpadding="0" cellspacing="0" border="0">
-                    	<tr>
-                    		<td width="15"><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="15"></td>
-                    		<td width="7" {$color}><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="7"></td>
-                    		<td colspan="2" {$color} style="padding: 4px 0px 5px 10px;">
-                    		    {% feincms_render_region newsletter "main" request %}
-                    		</td>
-                    		<td width="7" {$color}><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="7"></td>
-                    		<td width="17"><img src="{{NEWSLETTER_URL}}spacer.gif" height="1" width="17"></td>
-                    	</tr>
-                      </table>
-                    </td>
-            	</tr>
-            	<tr>
-            	    <td valign="top"><img src="{{NEWSLETTER_URL}}spacer.gif" border="0" width="500" height="20"><br><br></td>
-            	</tr>
-            </table>
-        </td>
-    </tr>
+{% endif %}
+<body bgcolor="#CCCCCC" topmargin="0" leftmargin="0" >
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td align="center"><table width="680" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td height="20" align="center" bgcolor="#FFFFFF">&nbsp;</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFFFFF"><table width="630" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="right"><a href="insertyourlovelydynamiclinkhere.com" class="webViewLink">NEWSLETTER IM BROWSER ÖFFNEN</a></td>
+          </tr>
+        </table></td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFFFFF" height="60">&nbsp;</td>
+      </tr>
+      <tr>
+        <td align="center"><a href="http://www.allink.ch" target="_blank"><img src="{{NEWSLETTER_URL}}default_logo.jpg" width="680" height="115" alt="allink" border="0" /></a></td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFFFFF" height="26"></td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFFFFF"><table width="630" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center" bgcolor="#F4F4F4"><p>&nbsp;</p>
+
+
+
+
+
+              <table width="600" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="left" class="title"><h2>Penny Black</h2></td>
+                </tr>
+                <tr>
+                  <td height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td align="left" valign="top">The Penny Black was the world's first adhesive postage stamp used in a public postal system. It was issued by the United Kingdom of Great Britain and Ireland on 1 May 1840, for official use from 6 May of that year. All London post offices received official issues of the new stamps but other offices throughout the United Kingdom did not, continuing to accept postage payments in cash only for a period. Post offices such as those in Bath, began offering the stamp unofficially after 2 May.</td>
+                </tr>
+              </table>
+              <br />
+              <br />
+              <br />
+
+
+
+
+
+
+
+              <table width="600" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td colspan="3" align="left" class="title"><h2>History</h2></td>
+                </tr>
+                <tr>
+                  <td height="10" colspan="3">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td width="100" align="left" valign="top"><img src="{{NEWSLETTER_URL}}default_image.jpg" width="100" height="116" /></td>
+                  <td width="20">&nbsp;</td>
+                  <td width="480" align="left" valign="top">The idea of an adhesive stamp to indicate pre-payment of postage was part of Sir Rowland Hill's 1837 proposals to reform the British postal system; it was normal then for the recipient to pay postage on delivery. A companion idea, which Hill disclosed on 13 February 1837 at a government enquiry, was that of a separate sheet that folded to form an enclosure or envelope for carrying letters. At that time postage was charged by the sheet and on the distance travelled.</td>
+                </tr>
+              </table>
+              <br />
+              <br />
+              <br />
+              
+          
+
+
+
+
+                <table width="600" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="left" class="title"><h2>Printing</h2></td>
+                </tr>
+                <tr>
+                  <td height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td align="left" valign="top"><table width="600" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td width="135"><img src="{{NEWSLETTER_URL}}default_image.jpg" width="135" height="157" /></td>
+                      <td width="20" rowspan="2">&nbsp;</td>
+                      <td width="135"><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td width="20" rowspan="2">&nbsp;</td>
+                      <td width="135"><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td width="20" rowspan="2">&nbsp;</td>
+                      <td width="135"><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      </tr>
+                    <tr>
+                      <td>Legende</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      </tr>
+                    <tr>
+                      <td height="20" colspan="7">&nbsp;</td>
+                      </tr>
+                    <tr>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      </tr>
+                    <tr>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      </tr>
+                    <tr>
+                      <td height="20" colspan="7">&nbsp;</td>
+                      </tr>
+                    <tr>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      </tr>
+                    <tr>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      </tr>
+                    <tr>
+                      <td height="20" colspan="7">&nbsp;</td>
+                      </tr>
+                    <tr>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      <td rowspan="2">&nbsp;</td>
+                      <td><img src="{{NEWSLETTER_URL}}default_image.jpg" alt="" width="135" height="157" /></td>
+                      </tr>
+                    <tr>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      <td>Sub</td>
+                      </tr>
+                  </table></td>
+                </tr>
+              </table>
+              <br />
+              <br />
+
+
+
+
+
+
+              <table width="600" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="left" class="title"><h2>Rarity</h2></td>
+                </tr>
+                <tr>
+                  <td height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td align="left" valign="top"><img src="{{NEWSLETTER_URL}}default_image.jpg" width="600" height="600" /></td>
+                </tr>
+              </table>
+              <br />
+              <br />
+              <br />
+              <br />
+              <table width="600" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="right"><a href="yoursuperlinkhere.com" class="webViewLink">NEWSLETTER KÜNDIGEN</a></td>
+                </tr>
+                <tr>
+                  <td align="right" height="20"></td>
+                </tr>
+              </table></td>
+          </tr>
+        </table></td>
+      </tr>
+      <tr>
+        <td align="center"></td>
+      </tr>
+    </table></td>
+  </tr>
 </table>
 </body>
+
+
+{% if webview %}
 </html>
+{% endif %}
