@@ -24,7 +24,7 @@ class TextOnlyNewsletterContent(RichTextContent):
     feincms_item_editor_form = NewsletterSectionAdminForm
 
     feincms_item_editor_includes = {
-        'head': [ settings.PENNYBLACK_TINYMCE_CONFIG_URL ],
+        'head': [ settings.TINYMCE_CONFIG_URL ],
         }
 
     #text = models.TextField(_('text'), blank=True)

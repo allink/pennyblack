@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
 from django.utils import translation
 from django.core import mail
-from django.conf import settings
+from pennyblack import settings
 from django.template import loader, Context, Template, RequestContext
 from django.contrib.sites.models import Site
 from django.db.models import signals
@@ -136,7 +136,7 @@ class NewsletterJobUnitAdmin(admin.ModelAdmin):
 class NewsletterJob(models.Model):
     """A bunch of participants wich receive a newsletter"""
     newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True, limit_choices_to = {'active': True})
-    status = models.IntegerField(choices=((1,'Draft'),(2,'Pending'),(3,'Sending'),(4,'Finished'),(5,'Error'),), default=1)
+    status = models.IntegerField(choices=settings.JOB_STATUS, default=1)
     date_created = models.DateTimeField(verbose_name="Created", default=datetime.datetime.now())
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
     date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Finished", default=None)
