@@ -7,6 +7,8 @@ Abhängigkeiten
 *   Python
     *   django
     *   feincms
+    *   pyspf
+    *   pydns
 *   Project Settings
     *   TEMPLATE_CONTEXT_PROCESSORS
         *   django.core.context_processors.request
