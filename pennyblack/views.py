@@ -13,8 +13,10 @@ def preview(request, newsletter_id):
     Previews this newsletter as a Website
     """
     newsletter = Newsletter.objects.filter(pk=newsletter_id)[0]
+    request.content_context = {}
     return render_to_response(newsletter.template.path, {
         'newsletter' : newsletter,
+        'webview' : True,
         }, context_instance=RequestContext(request))
 
 def redirect_link(request, mail_hash, link_hash):
@@ -30,13 +32,13 @@ def redirect_link(request, mail_hash, link_hash):
         return HttpResponseRedirect('/')
     
 
-def ping(request, mail_hash, path):
+def ping(request, mail_hash, filename):
     mail = Mail.objects.filter(mail_hash=mail_hash)
     if mail.count()>0:
         mail = mail[0]
         mail.viewed=True
         mail.save()
-    return HttpResponseRedirect(settings.NEWSLETTER_URL + path)
+    return HttpResponseRedirect(mail.job.newsletter.header_image.get_absolute_url())
 
 
 def view(request, mail_hash):
@@ -46,4 +48,4 @@ def view(request, mail_hash):
     mail=mail[0]
     mail.viewed=True
     mail.save()
-    return HttpResponse(mail.get_context())
+    return HttpResponse(mail.get_content(webview=True))

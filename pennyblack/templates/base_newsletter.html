@@ -26,7 +26,7 @@
         <td align="center" bgcolor="#FFFFFF" height="60">&nbsp;</td>
       </tr>
       <tr>
-        <td align="center"><a href="http://www.allink.ch" target="_blank"><img src="{% if pingback_url %}{{pingback_url}}{% else %}{{NEWSLETTER_URL}}{% endif %}default_logo.jpg" width="680" height="115" alt="allink" border="0" /></a></td>
+        <td align="center"><a href="{{newsletter.header_url}}" target="_blank"><img src="{% if webview %}{{newsletter.header_image.get_absolute_url}}{% else %}{{newsletter.get_base_url}}{% url pennyblack.ping mail.mail_hash, newsletter.header_image %}{% endif %}" border="0" /></a></td>
       </tr>
       <tr>
         <td align="center" bgcolor="#FFFFFF" height="26"></td>

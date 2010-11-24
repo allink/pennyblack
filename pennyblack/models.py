@@ -20,6 +20,7 @@ from django.core.mail.utils import DNS_NAME
 from feincms.models import Base
 from feincms.management.checker import check_database_schema
 from feincms.utils import copy_model_instance
+from feincms.module.medialibrary.models import MediaFile
 
 from Mailman.Bouncers.BouncerAPI import ScanMessages
 
@@ -43,6 +44,9 @@ class Newsletter(Base):
     subject = models.CharField(verbose_name="Betreff", max_length=250)
     reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
     language = models.CharField(max_length=6, verbose_name="Sprache", choices=settings.LANGUAGES)
+    header_image = models.ForeignKey(MediaFile, verbose_name="Header Image")
+    header_url = models.URLField()
+    site = models.ForeignKey(Site, verbose_name="Seite")
     
     #ga tracking
     utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
@@ -68,6 +72,9 @@ class Newsletter(Base):
         snapshot.save()
         snapshot.copy_content_from(self)
         return snapshot
+        
+    def get_base_url(self):
+        return "http://" + self.site.domain
         
     def replace_links(self, job):
         """
@@ -199,7 +206,7 @@ class NewsletterJob(models.Model):
         """
         link = Link(link_target=link, job=self)
         link.save()
-        return "http://" + Site.objects.all()[0].domain + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{person.mail_hash}}','link_hash':link.link_hash})
+        return self.newsletter.get_base_url() + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     
     def send(self):
         if not self.can_send():
@@ -276,19 +283,16 @@ class Mail(models.Model):
     get_email.short_description = "E-Mail"
 
     def get_message(self):
-        newsletter = self.job.newsletter
-        context = self.get_context()
-        context['newsletter'] = newsletter
-        content = render_to_string(newsletter.template.path,
-            context, context_instance=RequestContext(HttpRequest()))
-        
+        """
+        Returns a email message object
+        """
         if self.job.newsletter.reply_email!='':
             headers={'Reply-To': self.job.newsletter.reply_email}
         else:
             headers={}
         message = mail.EmailMessage(
             self.job.newsletter.subject,
-            content,
+            self.get_content(),
             self.job.newsletter.sender.email,
             [self.person.email],
             headers=headers,
@@ -296,11 +300,26 @@ class Mail(models.Model):
         message.content_subtype = "html"
         return message
     
+    def get_content(self, webview=False):
+        """
+        Returns the mail html content
+        """
+        newsletter = self.job.newsletter
+        context = self.get_context()
+        context['newsletter'] = newsletter
+        context['webview'] = webview
+        request = HttpRequest()
+        request.content_context = context
+        return render_to_string(newsletter.template.path,
+            context, context_instance=RequestContext(request))
+        
+    
     def get_context(self):
-        pingback_url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.ping', args=[self.mail_hash,'',])
-
+        """
+        Returns the context of this email as a dict
+        """
         weblink = _("To view this email as a web page, click [here]")
-        url = "http://" + Site.objects.all()[0].domain + reverse('pennyblack.view', args=[self.mail_hash])
+        url = self.job.newsletter.get_base_url() + reverse('pennyblack.view', args=[self.mail_hash])
         weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
         
         return {
@@ -308,7 +327,7 @@ class Mail(models.Model):
             'NEWSLETTER_URL': 'asdf',#settings.NEWSLETTER_URL,
             'person': self.person,
             'group_object': self.job.group_object,
-            'pingback_url': pingback_url,
+            'mail':self,
             'weblink':weblink,
         }
 

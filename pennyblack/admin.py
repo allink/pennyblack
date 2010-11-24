@@ -26,8 +26,8 @@ class MailInline(admin.TabularInline):
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     list_display = ('__unicode__', 'subject',)
     show_on_top = ('subject', 'sender', 'reply_email')
-    raw_id_fields = []
-    fields = ('name', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key')
+    raw_id_fields = ('header_image',)
+    fields = ('name', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url')
 
     def queryset(self, request):
           qs = super(NewsletterAdmin, self).queryset(request)
