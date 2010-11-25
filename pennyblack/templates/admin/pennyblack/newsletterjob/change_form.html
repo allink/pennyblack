@@ -18,3 +18,10 @@
 </ul>
 {{ block.super }}
 {% endblock %}
+
+{% block after_related_objects %}
+    <div class="submit-row">
+        <input type="submit" value="Save and send" class="default" name="_send" />
+    </div>
+    {{block.super}}
+{% endblock %}

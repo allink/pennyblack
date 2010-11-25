@@ -3,12 +3,16 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.template import Context, Template, TemplateSyntaxError
 from django.forms.util import ErrorList
+from django.core import files
 
 from pennyblack import settings
 
 from feincms.content.richtext.models import RichTextContentAdminForm, RichTextContent
+from feincms.module.medialibrary.models import MediaFile
 
 import re
+import os
+import Image
 
 HREF_RE = re.compile(r'href\="([^"><]+)"')
 
@@ -62,16 +66,22 @@ class TextOnlyNewsletterContent(RichTextContent):
         {%% block title %%}%s{%% endblock %%}
         {%% block text %%}%s{%% endblock %%}
         """ % (self.baselayout, self.title, self.text,))
-
+    
     def render(self, request, **kwargs):
-        return self.get_template().render(Context(request.content_context))
+        context = request.content_context
+        context.update({'content':self, 'content_width':settings.NEWSLETTER_CONTENT_WIDTH})
+        if hasattr(self,'get_extra_context'):
+            context.update(self.get_extra_context())
+        return self.get_template().render(Context(context))
 
 
 class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
     """
     Like a TextOnlyNewsletterContent but with extra image field
     """
-    image_original = models.ImageField(upload_to='newsletter/images')
+    image_original = models.ForeignKey(MediaFile)
+    image_thumb = models.ImageField(upload_to='newsletter/images', blank=True)
+    position = models.CharField(max_length=10, choices=settings.TEXT_AND_IMAGE_CONTENT_POSITIONS)
     
     baselayout = "content/text_and_image/section.html"
     
@@ -80,13 +90,31 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         verbose_name = _('text and image content')
         verbose_name_plural = _('text and image contents')
     
+    def get_extra_context(self):
+        image_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'center' else settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
+        text_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'center' else (settings.NEWSLETTER_CONTENT_WIDTH - 20 - settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE)
+        return {
+            'image_width': image_width,
+            'text_width': text_width,
+        }
+    
     def get_template(self):
         """
         Creates a template
         """
-        image_tag = """<img src="{{NEWSLETTER_URL}}default_image.jpg" width="100" height="116" />"""
         return Template("""{%% extends "%s" %%}
         {%% block title %%}%s{%% endblock %%}
         {%% block text %%}%s{%% endblock %%}
-        {%% block image %%}%s{%% endblock %%}
-        """ % (self.baselayout, self.title, self.text, image_tag))
+        """ % (self.baselayout, self.title, self.text))
+            
+    def save(self, *args, **kwargs):
+        image_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'center' else settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
+        im=Image.open(self.image_original.file.path)
+        im.thumbnail((image_width, 1000), Image.ANTIALIAS)
+        img_temp = files.temp.NamedTemporaryFile(delete=True)
+        im.save(img_temp,'jpeg')
+        img_temp.flush()
+        self.image_thumb.save(os.path.split(self.image_original.file.name)[1], files.File(img_temp), save=False)
+        super(TextWithImageNewsletterContent, self).save(*args, **kwargs)
+        
+    

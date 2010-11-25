@@ -3,8 +3,17 @@
 {% load i18n %}
 
 {% block object-tools %}
+<style type="text/css" media="screen">
+    #content-main ul.object-tools {
+        float:right;
+        margin:0 0 1em;
+    }
+    .object-tools + form {
+        clear:both;
+    }
+</style>
 <ul class="object-tools">
-</ul>
+    <li><a href="preview/" target="_blank">{% trans "Preview" %}</a></li></ul>
 {{ block.super }}
 {% endblock %}
 

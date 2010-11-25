@@ -5,19 +5,21 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 
 from pennyblack.models import Newsletter, Link, Mail
 
+@login_required
 def preview(request, newsletter_id):
     """
     Previews this newsletter as a Website
     """
     newsletter = Newsletter.objects.filter(pk=newsletter_id)[0]
-    request.content_context = {}
-    return render_to_response(newsletter.template.path, {
+    request.content_context = {
         'newsletter' : newsletter,
         'webview' : True,
-        }, context_instance=RequestContext(request))
+        }
+    return render_to_response(newsletter.template.path, request.content_context, context_instance=RequestContext(request))
 
 def redirect_link(request, mail_hash, link_hash):
     """

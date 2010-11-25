@@ -1,9 +1,12 @@
 from pennyblack.models import Newsletter, NewsletterJob, Mail, Link, Sender
+from pennyblack import settings
 
 from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
+from django.conf.urls.defaults import patterns
+from django.utils.translation import ugettext_lazy as _
 
 from feincms.admin import editor
 
@@ -30,8 +33,15 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     fields = ('name', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url')
 
     def queryset(self, request):
-          qs = super(NewsletterAdmin, self).queryset(request)
-          return qs.filter(active=True)
+        qs = super(NewsletterAdmin, self).queryset(request)
+        return qs.filter(active=True)
+
+    def get_urls(self):
+        urls = super(NewsletterAdmin, self).get_urls()
+        my_urls = patterns('',
+            (r'^(?P<newsletter_id>\d+)/preview/$', 'pennyblack.views.preview')
+        )
+        return my_urls + urls
     
 
 class NewsletterJobAdmin(admin.ModelAdmin):
@@ -44,7 +54,7 @@ class NewsletterJobAdmin(admin.ModelAdmin):
     inlines = (LinkInline, MailInline,)
     
     def get_readonly_fields(self, request, obj):
-        if obj.status == 1:
+        if obj.status in settings.JOB_STATUS_CAN_EDIT:
             return self.readonly_fields
         else:
             return self.readonly_fields + ('newsletter',)
@@ -59,8 +69,17 @@ class NewsletterJobAdmin(admin.ModelAdmin):
         extra_context['can_send']=obj.can_send
         return super(NewsletterJobAdmin, self).change_view(request, object_id, extra_context)
 
+    def response_change(self, request, obj):
+        """
+        Determines the HttpResponse for the change_view stage.
+        """
+        if request.POST.has_key("_send"):
+            obj.status = 11
+            obj.save()
+            self.message_user(request, _("Newsletter has been marked for delivery."))
+        return super(NewsletterJobAdmin,self).response_change(request, obj)
+
     def get_urls(self):
-        from django.conf.urls.defaults import patterns
         urls = super(NewsletterJobAdmin, self).get_urls()
         my_urls = patterns('',
             (r'^(?P<object_id>\d+)/send/$', self.admin_site.admin_view(self.send_newsletter))

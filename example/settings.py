@@ -103,6 +103,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.admin',
     'feincms',
+    'feincms.module.medialibrary',
     'pennyblack',
     'example',
 )

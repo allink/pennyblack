@@ -182,7 +182,7 @@ class NewsletterJob(models.Model):
     viewed.short_description = '# of views'
     
     def can_send(self):
-        if self.status != 1 and self.status != 5:
+        if not self.status in settings.JOB_STATUS_CAN_SEND:
             return False
         return self.is_valid()
 
@@ -209,11 +209,9 @@ class NewsletterJob(models.Model):
         return self.newsletter.get_base_url() + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     
     def send(self):
-        if not self.can_send():
-            raise exceptions.Exception('This job is not valid')
         self.newsletter = self.newsletter.create_snapshot()
         self.newsletter.replace_links(self)
-        self.status = 3
+        self.status = 21
         self.date_deliver_start = datetime.datetime.now()
         self.save()
         try:
@@ -225,10 +223,10 @@ class NewsletterJob(models.Model):
                 newsletter_mail.mark_sent()
             connection.close()
         except:
-            self.status = 5
+            self.status = 41
             raise
         else:
-            self.status = 4
+            self.status = 31
             self.date_deliver_finished = datetime.datetime.now()
         self.save()
         
@@ -317,18 +315,11 @@ class Mail(models.Model):
     def get_context(self):
         """
         Returns the context of this email as a dict
-        """
-        weblink = _("To view this email as a web page, click [here]")
-        url = self.job.newsletter.get_base_url() + reverse('pennyblack.view', args=[self.mail_hash])
-        weblink = weblink.replace("[",'<a href="'+url+'">').replace("]",'</a>')
-        
+        """        
         return {
-            # todo: newsletter url konzept aendern
-            'NEWSLETTER_URL': 'asdf',#settings.NEWSLETTER_URL,
             'person': self.person,
             'group_object': self.job.group_object,
             'mail':self,
-            'weblink':weblink,
         }
 
 class Sender(models.Model):

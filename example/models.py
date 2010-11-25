@@ -1,7 +1,9 @@
 from django.db import models
 
-from pennyblack.models import Newsletter, NewsletterReceiverMixin, NewsletterJobUnitMixin
-from pennyblack.content.richtext import TextOnlyNewsletterContent
+from pennyblack.models import Newsletter, NewsletterReceiverMixin, \
+    NewsletterJobUnitMixin
+from pennyblack.content.richtext import TextOnlyNewsletterContent, \
+    TextWithImageNewsletterContent
 
 Newsletter.register_templates({
     'key': 'base',
@@ -13,6 +15,7 @@ Newsletter.register_templates({
     })
     
 Newsletter.create_content_type(TextOnlyNewsletterContent)
+Newsletter.create_content_type(TextWithImageNewsletterContent)
 
 class Group(models.Model, NewsletterJobUnitMixin):
     name = models.CharField(max_length=20)
