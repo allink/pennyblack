@@ -21,12 +21,12 @@ class Group(models.Model, NewsletterJobUnitMixin):
     name = models.CharField(max_length=20)
     class Meta:
         abstract = False
-    
-    def get_newsletter_receivers(self):
-        return self.client_set.all()
-    
+        
     def __unicode__(self):
         return self.name
+    
+    def get_newsletter_receiver_collections(self):
+        return (('all','client_set'),)
     
 
 class Client(models.Model, NewsletterReceiverMixin):

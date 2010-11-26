@@ -116,14 +116,17 @@ class NewsletterJobUnitMixin(object):
     def get_newsletter_receiver_collections(self):
         """
         Returns a dict of valid receiver collections
-        """
+        has to be overriden in the object to return a tuple of querysets
         return (('all','clients'),)
+        """
+        raise exeptions.NotImplementedError("Override this method in your class!")
     
     def get_newsletter_receivers(self, collection):
         """
         Tries to get a queryset named after collection bevore giving up.
         """
-        queryset = getattr(self, collection, None)
+        collection_to_attr = dict(self.get_newsletter_receiver_collections())
+        queryset = getattr(self, collection_to_attr[collection], None) # todo: wieder aufschluesseln
         if queryset:
             return queryset
         raise exeptions.NotImplementedError("Didn't find any subset, maybe you didn't implement get_newsletter_receiver_collections.")
@@ -133,6 +136,9 @@ class NewsletterJobUnitAdmin(admin.ModelAdmin):
     
     def create_newsletter(self, request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
+        if len(obj.get_newsletter_receiver_collections()) == 1:
+            job = obj.create_newsletter(obj.get_newsletter_receiver_collections()[0][0])
+            return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(job.id,)))            
         if request.method == 'POST':
             form = CollectionSelectForm(data=request.POST, group_object=obj)
             if form.is_valid():
@@ -215,7 +221,7 @@ class NewsletterJob(models.Model):
         """
         if not hasattr(self.group_object, 'get_newsletter_receivers'):
             raise exceptions.NotImplementedError('Object needs to implement get_newsletter_receivers')
-        for receiver in self.group_object.get_newsletter_receivers():
+        for receiver in self.group_object.get_newsletter_receivers(self.collection).all():
             self.mails.add(Mail(person=receiver))
     
     def add_link(self, link):
