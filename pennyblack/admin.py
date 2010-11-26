@@ -49,8 +49,8 @@ class NewsletterJobAdmin(admin.ModelAdmin):
     actions = None
     list_display = ('newsletter', 'status', 'total_mails', 'delivery_status', 'viewed', 'date_created')
     list_filter   = ('status', 'newsletter',)
-    fields = ('newsletter', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)
-    readonly_fields = ('status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)    
+    fields = ('newsletter', 'collection', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)
+    readonly_fields = ('collection', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)    
     inlines = (LinkInline, MailInline,)
     
     def get_readonly_fields(self, request, obj):

@@ -20,6 +20,7 @@ def preview(request, newsletter_id):
         'webview' : True,
         }
     return render_to_response(newsletter.template.path, request.content_context, context_instance=RequestContext(request))
+    
 
 def redirect_link(request, mail_hash, link_hash):
     """

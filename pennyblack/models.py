@@ -14,7 +14,9 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect, HttpRequest
 from django.core.validators import email_re
 from django.template.loader import render_to_string
+from django.shortcuts import render_to_response
 from django.core.mail.utils import DNS_NAME
+from django.core.context_processors import csrf
 
 
 from feincms.models import Base
@@ -22,7 +24,9 @@ from feincms.management.checker import check_database_schema
 from feincms.utils import copy_model_instance
 from feincms.module.medialibrary.models import MediaFile
 
-from Mailman.Bouncers.BouncerAPI import ScanMessages
+# from Mailman.Bouncers.BouncerAPI import ScanMessages
+
+from pennyblack.forms import CollectionSelectForm
 
 import exceptions
 import hashlib
@@ -100,41 +104,54 @@ class NewsletterJobUnitMixin(object):
     """
     Abstract baseclass for every object which can be target of a NewsletterJob
     """    
-    def create_newsletter(self):
+    def create_newsletter(self, collection):
         """
         Creates a newsletter for every NewsletterReceiverMixin
         """
-        job = NewsletterJob(group_object=self)
+        job = NewsletterJob(group_object=self, collection=collection)
         job.save()
         job.create_mails()
         return job
+        
+    def get_newsletter_receiver_collections(self):
+        """
+        Returns a dict of valid receiver collections
+        """
+        return (('all','clients'),)
     
-    def get_newsletter_receivers(self):
+    def get_newsletter_receivers(self, collection):
         """
-        Tries to get a queryset named client or participants bevore giving up.
+        Tries to get a queryset named after collection bevore giving up.
         """
-        queryset = getattr(self, 'clients', None)
+        queryset = getattr(self, collection, None)
         if queryset:
             return queryset
-        queryset = getattr(self, 'participants', None)
-        if queryset:
-            return queryset
-        raise exeptions.NotImplementedError("Didn't find any subset, you need to implement get_newsletter_receivers yourselfe.")
+        raise exeptions.NotImplementedError("Didn't find any subset, maybe you didn't implement get_newsletter_receiver_collections.")
 
 class NewsletterJobUnitAdmin(admin.ModelAdmin):
     change_form_template = "admin/pennyblack/jobunit/change_form.html"
     
     def create_newsletter(self, request, object_id):
-        from django.shortcuts import get_object_or_404
         obj = get_object_or_404(self.model, pk=object_id)
-        job = obj.create_newsletter()
-        return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(job.id,)))
-    
+        if request.method == 'POST':
+            form = CollectionSelectForm(data=request.POST, group_object=obj)
+            if form.is_valid():
+                job = obj.create_newsletter(form.cleaned_data['collection'])
+                return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(job.id,)))
+        else:
+            form = CollectionSelectForm(group_object=obj)
+        context = {
+            'adminform':form,
+            'form_url' : reverse('admin:pennyblack_newsletterjobunit_create_newsletter', args=(object_id,))
+        }
+        context.update(csrf(request))
+        return render_to_response('admin/pennyblack/jobunit/select_receiver_collection.html',context)
+            
     def get_urls(self):
-        from django.conf.urls.defaults import patterns
+        from django.conf.urls.defaults import patterns, url
         urls = super(NewsletterJobUnitAdmin, self).get_urls()
         my_urls = patterns('',
-            (r'^(?P<object_id>\d+)/create_newsletter/$', self.admin_site.admin_view(self.create_newsletter))
+            url(r'^(?P<object_id>\d+)/create_newsletter/$', self.admin_site.admin_view(self.create_newsletter), name='pennyblack_newsletterjobunit_create_newsletter'),
         )
         return my_urls + urls
         
@@ -151,6 +168,7 @@ class NewsletterJob(models.Model):
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
     group_object = generic.GenericForeignKey('content_type', 'object_id')
+    collection = models.CharField(max_length=20)
     
     #ga tracking
     utm_campaign = models.SlugField(verbose_name="Utm Campaign")
@@ -355,7 +373,7 @@ class Sender(models.Model):
             lines.append('')
             data = '\n'.join(lines)
             mime = email.message_from_string(data)
-            print ScanMessages(None, mime)
+            # print ScanMessages(None, mime)
         conn.quit()
         
     

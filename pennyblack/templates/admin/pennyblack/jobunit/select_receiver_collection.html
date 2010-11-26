@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<form action="{{ form_url }}" method="post" id="{{ opts.module_name }}_form">{% csrf_token %}
+<div>
+{% if errors %}
+    <p class="errornote">
+    {% blocktrans count errors|length as counter %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+    </p>
+    {{ adminform.form.non_field_errors }}
+{% endif %}
+
+<div class="form-row{% if line.errors %} errors{% endif %}{% for field in line %} {{ field.field.name }}{% endfor %}">
+    {{ line.errors }}
+    {% for field in adminform %}
+        <div{% if not line.fields|length_is:"1" %} class="field-box"{% endif %}>
+            {% if field.is_checkbox %}
+                {{ field.field }}{{ field.label_tag }}
+            {% else %}
+                {{ field.label_tag }}
+                {% if field.is_readonly %}
+                    <p>{{ field.contents }}</p>
+                {% else %}
+                    {{ field }}
+                {% endif %}
+            {% endif %}
+            {% if field.field.field.help_text %}
+                <p class="help">{{ field.field.field.help_text|safe }}</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+<div class="submit-row" {% if is_popup %}style="overflow: auto;"{% endif %}>
+<input type="submit" value="{% trans 'Save' %}" class="default" name="_save" />
+</div>
+
+{% if adminform and add %}
+   <script type="text/javascript">document.getElementById("{{ adminform.first_field.auto_id }}").focus();</script>
+{% endif %}
+
+</div>
+</form></div>
+{% endblock %}
