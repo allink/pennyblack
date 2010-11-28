@@ -33,7 +33,7 @@ import hashlib
 import random
 import sys
 import datetime
-import spf
+# import spf
 import socket
 import poplib
 import email
@@ -193,18 +193,40 @@ class NewsletterJob(models.Model):
             self.newsletter.delete()
         super(NewsletterJob, self).delete(*args, **kwargs)
     
-    def total_mails(self):
+    def count_mails_total(self):
         return str(self.mails.count())
-    total_mails.short_description = '# of mails'
+    count_mails_total.short_description = '# of mails'
     
-    def delivery_status(self):
+    def count_mails_sent(self):
         return str(self.mails.filter(sent=True).count())
-    delivery_status.short_description = '# of mails sent'
+    count_mails_sent.short_description = '# of mails sent'
+
+    @property
+    def percentage_mails_sent(self):
+        if self.count_mails_total() == '0':
+            return 0
+        return round(float(self.count_mails_sent())/float(self.count_mails_total()) * 100)
     
-    def viewed(self):
+    def count_mails_viewed(self):
         return str(self.mails.exclude(viewed=None).count())
-    viewed.short_description = '# of views'
+    count_mails_viewed.short_description = '# of views'
+
+    @property
+    def percentage_mails_viewed(self):
+        if self.count_mails_total() == '0':
+            return 0
+        return round(float(self.count_mails_viewed())/float(self.count_mails_total()) * 100)
     
+    def count_mails_bounced(self):
+        return str(self.mails.filter(bounced=True).count())
+    count_mails_bounced.short_description = '# of bounces'
+
+    @property
+    def percentage_mails_bounced(self):
+        if self.count_mails_total() == '0':
+            return 0
+        return round(float(self.count_mails_bounced())/float(self.count_mails_total()) * 100)
+
     def can_send(self):
         if not self.status in settings.JOB_STATUS_CAN_SEND:
             return False
@@ -256,7 +278,7 @@ class NewsletterJob(models.Model):
         
 
 class Link(models.Model):
-    job = models.ForeignKey(NewsletterJob)
+    job = models.ForeignKey(NewsletterJob, related_name='links')
     link_hash = models.CharField(max_length=32, blank=True)
     link_target = models.CharField(verbose_name="Adresse", max_length=500)
     
@@ -382,7 +404,8 @@ class Sender(models.Model):
         """
         Check if sender is authorised by sender policy framework
         """
-        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
+        # todo: wieder aufnehmen
+        # return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
     
     def spf_result(self):
         return self.check_spf()

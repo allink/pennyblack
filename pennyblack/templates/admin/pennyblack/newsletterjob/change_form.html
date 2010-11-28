@@ -12,16 +12,16 @@
     }
 </style>
 <ul class="object-tools">
-    {% if can_send %}
-        <li><a href="send/">{% trans "Versenden" %}</a></li>
-    {% endif %}
+    <li><a href="statistics/">{% trans "Statistics" %}</a></li>
 </ul>
 {{ block.super }}
 {% endblock %}
 
 {% block after_related_objects %}
-    <div class="submit-row">
-        <input type="submit" value="Save and send" class="default" name="_send" />
-    </div>
+    {% if can_send %}
+        <div class="submit-row">
+            <input type="submit" value="Save and send" class="default" name="_send" />
+        </div>
+    {% endif %}
     {{block.super}}
 {% endblock %}

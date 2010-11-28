@@ -7,6 +7,8 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
 from django.conf.urls.defaults import patterns
 from django.utils.translation import ugettext_lazy as _
+from django.shortcuts import render_to_response
+
 
 from feincms.admin import editor
 
@@ -47,10 +49,10 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
 class NewsletterJobAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
     actions = None
-    list_display = ('newsletter', 'status', 'total_mails', 'delivery_status', 'viewed', 'date_created')
+    list_display = ('newsletter', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
     list_filter   = ('status', 'newsletter',)
-    fields = ('newsletter', 'collection', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)
-    readonly_fields = ('collection', 'status', 'group_object', 'total_mails', 'delivery_status', 'viewed', 'date_deliver_start', 'date_deliver_finished',)    
+    fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)
+    readonly_fields = ('collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)    
     inlines = (LinkInline, MailInline,)
     
     def get_readonly_fields(self, request, obj):
@@ -59,10 +61,9 @@ class NewsletterJobAdmin(admin.ModelAdmin):
         else:
             return self.readonly_fields + ('newsletter',)
         
-    def send_newsletter(self, request, object_id):
+    def statistics_view(self, request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
-        obj.send()
-        return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(obj.id,)))
+        return render_to_response('admin/pennyblack/newsletterjob/statistics.html',{'object':obj})
     
     def change_view(self, request, object_id, extra_context={}):
         obj = get_object_or_404(self.model, pk=object_id)
@@ -82,7 +83,7 @@ class NewsletterJobAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super(NewsletterJobAdmin, self).get_urls()
         my_urls = patterns('',
-            (r'^(?P<object_id>\d+)/send/$', self.admin_site.admin_view(self.send_newsletter))
+            (r'^(?P<object_id>\d+)/statistics/$', self.admin_site.admin_view(self.statistics_view))
         )
         return my_urls + urls
 
