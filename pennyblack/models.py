@@ -202,7 +202,7 @@ class NewsletterJob(models.Model):
     delivery_status.short_description = '# of mails sent'
     
     def viewed(self):
-        return str(self.mails.filter(viewed=True).count())
+        return str(self.mails.exclude(viewed=None).count())
     viewed.short_description = '# of views'
     
     def can_send(self):
@@ -259,7 +259,18 @@ class Link(models.Model):
     job = models.ForeignKey(NewsletterJob)
     link_hash = models.CharField(max_length=32, blank=True)
     link_target = models.CharField(verbose_name="Adresse", max_length=500)
-    click_count = models.IntegerField(default=0)
+    
+    def click_count(self):
+        return self.clicks.count()
+    click_count.short_description = 'Click count'
+    
+    def click(self,mail):
+        """
+        Creates a LinkClick and returns the link target
+        """
+        click = LinkClick(link=self, mail=mail)
+        click.save()
+        return self.link_target
 
     def __unicode__(self):
         return self.link_target
@@ -268,12 +279,17 @@ class Link(models.Model):
         if self.link_hash == u'':
             self.link_hash = hashlib.md5(str(self.id)+str(random.random())).hexdigest()
         super(Link, self).save(**kwargs)
+        
+class LinkClick(models.Model):
+    link = models.ForeignKey(Link, related_name='clicks')
+    mail = models.ForeignKey('Mail', related_name='clicks')
+    date = models.DateTimeField(default=datetime.datetime.now())
 
 class Mail(models.Model):
     """
     This is a single Mail, it's part of a NewsletterJob
     """
-    viewed = models.BooleanField(default=False)
+    viewed = models.DateTimeField(default=None, null=True)
     bounced = models.BooleanField(default=False)
     sent = models.BooleanField(default=False)
     content_type = models.ForeignKey(ContentType)
@@ -293,6 +309,11 @@ class Mail(models.Model):
     def mark_sent(self):
         self.sent = True
         self.save()
+    
+    def mark_viewed(self):
+        if not self.viewed:
+            self.viewed = datetime.datetime.now()
+            self.save()
     
     def is_valid(self):
         """
