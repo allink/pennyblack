@@ -5,7 +5,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
 from django.utils import translation
 from django.core import mail
-from pennyblack import settings
 from django.template import loader, Context, Template, RequestContext
 from django.contrib.sites.models import Site
 from django.db.models import signals
@@ -24,9 +23,11 @@ from feincms.management.checker import check_database_schema
 from feincms.utils import copy_model_instance
 from feincms.module.medialibrary.models import MediaFile
 
-# from Mailman.Bouncers.BouncerAPI import ScanMessages
-
 from pennyblack.forms import CollectionSelectForm
+from pennyblack import settings
+
+if settings.BOUNCE_DETECTION_ENABLE:
+    from Mailman.Bouncers.BouncerAPI_new import ScanText
 
 import exceptions
 import hashlib
@@ -36,7 +37,6 @@ import datetime
 # import spf
 import socket
 import poplib
-import email
 
       
 class Newsletter(Base):
@@ -88,6 +88,8 @@ class Newsletter(Base):
             for content in cls.objects.filter(parent=self):
                 content.replace_links(job)
                 content.save()
+        self.header_url = job.add_link(self.header_url)
+        self.save()
     
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
@@ -319,6 +321,7 @@ class Mail(models.Model):
     person = generic.GenericForeignKey('content_type', 'object_id')
     job = models.ForeignKey(NewsletterJob, related_name="mails")
     mail_hash = models.CharField(max_length=32, blank=True)
+    email = models.EmailField() # the address is stored when the mail is sent
     
     def __unicode__(self):
         return '%s to %s' % (self.job, self.person,)
@@ -351,6 +354,7 @@ class Mail(models.Model):
         """
         Returns a email message object
         """
+        self.email = self.person.get_email()
         if self.job.newsletter.reply_email!='':
             headers={'Reply-To': self.job.newsletter.reply_email}
         else:
@@ -359,7 +363,7 @@ class Mail(models.Model):
             self.job.newsletter.subject,
             self.get_content(),
             self.job.newsletter.sender.email,
-            [self.person.email],
+            [self.email],
             headers=headers,
         )
         message.content_subtype = "html"
@@ -388,14 +392,21 @@ class Mail(models.Model):
             'group_object': self.job.group_object,
             'mail':self,
         }
+    
+    def get_header_url(self):
+        """
+        Gets the header url for this email
+        """
+        return self.job.newsletter.header_url.replace('{{mail.mail_hash}}',self.mail_hash)
 
 class Sender(models.Model):
     email = models.EmailField(verbose_name="Von E-Mail Adresse")
     name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
-    pop_username = models.CharField(verbose_name="Pop3 Username", max_length=100, blank=True)
-    pop_password = models.CharField(verbose_name="Pop3 Passwort", max_length=100, blank=True)
-    pop_server = models.CharField(verbose_name="Pop3 Server", max_length=100, blank=True)
-    pop_port = models.IntegerField(verbose_name="Pop3 Port", max_length=100, default=110)
+    imap_username = models.CharField(verbose_name="IMAP Username", max_length=100, blank=True)
+    imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
+    pop_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
+    pop_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
+    get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
     
     def __unicode__(self):
         return self.email
@@ -412,18 +423,31 @@ class Sender(models.Model):
     check_spf.short_description = "spf Result"
     
     def get_mail(self):
-        conn = poplib.POP3(self.pop_server, self.pop_port)
-        conn.user(self.pop_username)
-        conn.pass_(self.pop_password)
+        """
+        Checks the inbox of this sender and prcesses the bounced emails
+        """
+        if not settings.BOUNCE_DETECTION_ENABLE:
+            return
+        oldest_date = datetime.datetime.now()-datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
+        try:
+            conn = poplib.POP3(self.pop_server, self.pop_port)
+            conn.user(self.pop_username)
+            conn.pass_(self.pop_password)
+        except poplib.error_proto, e:
+            print e
+            return
         (numMessages, totalSize) = conn.stat()
-        print 'messages '+str(numMessages)
-        print 'size '+str(totalSize)
         for i in range(1,numMessages+1):
             (comment, lines, octets) = conn.retr(i)
             lines.append('')
             data = '\n'.join(lines)
-            mime = email.message_from_string(data)
-            # print ScanMessages(None, mime)
+            addrs = ScanText(data)
+            addrs = addrs.split(';')
+            if len(addrs) == 1 and len(addrs[0]) == 0:
+                continue
+            for addr in addrs:
+                Mail.objects.filter(email=addr).filter(job__date_deliver_finished__gte=oldest_date).update(bounced=True)
+            # conn.dele(i)                
         conn.quit()
         
     
