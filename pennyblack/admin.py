@@ -89,7 +89,7 @@ class NewsletterJobAdmin(admin.ModelAdmin):
 
 class SenderAdmin(admin.ModelAdmin):
     list_display = ('email', 'name',)
-    fields = ('email', 'name', 'pop_username', 'pop_password', 'pop_server', 'pop_port', 'get_bounce_emails', 'spf_result',)
+    fields = ('email', 'name', 'imap_username', 'imap_password', 'imap_server', 'imap_port', 'get_bounce_emails', 'spf_result',)
     readonly_fields = ('spf_result',)
 
 admin.site.register(Newsletter, NewsletterAdmin)

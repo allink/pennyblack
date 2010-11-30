@@ -36,7 +36,7 @@ import sys
 import datetime
 # import spf
 import socket
-import poplib
+import imaplib
 
       
 class Newsletter(Base):
@@ -404,8 +404,8 @@ class Sender(models.Model):
     name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
     imap_username = models.CharField(verbose_name="IMAP Username", max_length=100, blank=True)
     imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
-    pop_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
-    pop_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
+    imap_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
+    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
     get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
     
     def __unicode__(self):
@@ -430,24 +430,27 @@ class Sender(models.Model):
             return
         oldest_date = datetime.datetime.now()-datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
         try:
-            conn = poplib.POP3(self.pop_server, self.pop_port)
-            conn.user(self.pop_username)
-            conn.pass_(self.pop_password)
-        except poplib.error_proto, e:
+            conn = imaplib.IMAP4(self.imap_server, self.imap_port)
+            conn.login(self.imap_username, self.imap_password)
+            if conn.select(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] != 'OK':
+                conn.create(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)
+            conn.select()
+            typ, data = conn.search(None, 'ALL')
+            for num in data[0].split():
+                typ, data = conn.fetch(num, '(RFC822)')
+                addrs = ScanText(data[0][1])
+                addrs = addrs.split(';')
+                if len(addrs) == 1 and len(addrs[0]) == 0:
+                    continue
+                for addr in addrs:
+                    Mail.objects.filter(email=addr).filter(job__date_deliver_finished__gte=oldest_date).update(bounced=True)
+                if conn.copy(num,settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
+                    conn.store(num, '+FLAGS', '\\Deleted')
+            conn.expunge()
+            conn.close()
+            conn.logout()
+        except imaplib.IMAP4.error, e:
             print e
             return
-        (numMessages, totalSize) = conn.stat()
-        for i in range(1,numMessages+1):
-            (comment, lines, octets) = conn.retr(i)
-            lines.append('')
-            data = '\n'.join(lines)
-            addrs = ScanText(data)
-            addrs = addrs.split(';')
-            if len(addrs) == 1 and len(addrs[0]) == 0:
-                continue
-            for addr in addrs:
-                Mail.objects.filter(email=addr).filter(job__date_deliver_finished__gte=oldest_date).update(bounced=True)
-            # conn.dele(i)                
-        conn.quit()
         
     
