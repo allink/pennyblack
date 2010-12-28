@@ -5,9 +5,11 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404
-from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import patterns, url
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response
+from django.core.context_processors import csrf
+
 
 
 from feincms.admin import editor
@@ -70,20 +72,32 @@ class NewsletterJobAdmin(admin.ModelAdmin):
         extra_context['can_send']=obj.can_send
         return super(NewsletterJobAdmin, self).change_view(request, object_id, extra_context)
 
+    def send_newsletter_view(self,request, object_id):
+        obj = get_object_or_404(self.model, pk=object_id)
+        if request.method == 'POST' and request.POST.has_key("_send"):
+            obj.status = 11
+            obj.save()
+            self.message_user(request, _("Newsletter has been marked for delivery."))
+        return HttpResponseRedirect(reverse('admin:%s_%s_changelist' %(self.model._meta.app_label,  self.model._meta.module_name)))
+
     def response_change(self, request, obj):
         """
         Determines the HttpResponse for the change_view stage.
         """
-        if request.POST.has_key("_send"):
-            obj.status = 11
-            obj.save()
-            self.message_user(request, _("Newsletter has been marked for delivery."))
+        if request.POST.has_key("_send_prepare"):
+            context = {'object':obj}
+            context.update(csrf(request))
+            return render_to_response(
+                'admin/pennyblack/newsletterjob/send_confirmation.html', context)
         return super(NewsletterJobAdmin,self).response_change(request, obj)
 
     def get_urls(self):
         urls = super(NewsletterJobAdmin, self).get_urls()
+        info = self.model._meta.app_label, self.model._meta.module_name
+        print info
         my_urls = patterns('',
-            (r'^(?P<object_id>\d+)/statistics/$', self.admin_site.admin_view(self.statistics_view))
+            url(r'^(?P<object_id>\d+)/statistics/$', self.admin_site.admin_view(self.statistics_view), name='%s_%s_statistics' % info),
+            url(r'^(?P<object_id>\d+)/send/$', self.admin_site.admin_view(self.send_newsletter_view), name=('%s_%s_send' % info)),
         )
         return my_urls + urls
 

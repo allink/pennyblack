@@ -34,7 +34,7 @@ import hashlib
 import random
 import sys
 import datetime
-# import spf
+import spf
 import socket
 import imaplib
 
@@ -405,7 +405,7 @@ class Sender(models.Model):
     imap_username = models.CharField(verbose_name="IMAP Username", max_length=100, blank=True)
     imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
     imap_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
-    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
+    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143, blank=True)
     get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
     
     def __unicode__(self):
@@ -415,8 +415,7 @@ class Sender(models.Model):
         """
         Check if sender is authorised by sender policy framework
         """
-        # todo: wieder aufnehmen
-        # return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
+        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
     
     def spf_result(self):
         return self.check_spf()
