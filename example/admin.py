@@ -1,5 +1,5 @@
 from example.models import Client, Group
-from pennyblack.models import NewsletterJobUnitAdmin
+from pennyblack.options import JobUnitAdmin
 
 from django.contrib import admin
 
@@ -8,4 +8,4 @@ class ClientAdmin(admin.ModelAdmin):
     list_filter   = ('groups',)
     
 admin.site.register(Client, ClientAdmin)
-admin.site.register(Group, NewsletterJobUnitAdmin)
+admin.site.register(Group, JobUnitAdmin)

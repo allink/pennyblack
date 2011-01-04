@@ -1,6 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
 {% block content %}
+<h1>Select Receiver Collection</h1>
 <form action="{{ form_url }}" method="post" id="{{ opts.module_name }}_form">{% csrf_token %}
 <div>
 {% if errors %}

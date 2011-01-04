@@ -1,24 +1,21 @@
-from pennyblack.models import Newsletter, NewsletterJob, Mail, Link, Sender
-from pennyblack import settings
-
-from django.contrib import admin
-from django.http import HttpResponseRedirect, HttpResponse
-from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404
 from django.conf.urls.defaults import patterns, url
-from django.utils.translation import ugettext_lazy as _
-from django.shortcuts import render_to_response
+from django.contrib import admin
 from django.core.context_processors import csrf
-
-
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import get_object_or_404, render_to_response
+from django.utils.translation import ugettext_lazy as _
 
 from feincms.admin import editor
 
 import threading
 
+from pennyblack.models import Newsletter, Job, Mail, Link, Sender
+from pennyblack import settings
+from pennyblack.forms import JobAdminForm
+
 class LinkInline(admin.TabularInline):
     model = Link
-    #readonly_fields = ('link_hash', 'click_count',)
     max_num = 0
     can_delete = False
     readonly_fields = ('link_hash', 'click_count',)
@@ -31,14 +28,19 @@ class MailInline(admin.TabularInline):
     readonly_fields = ('get_email',)
 
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
-    list_display = ('__unicode__', 'subject',)
-    show_on_top = ('subject', 'sender', 'reply_email')
+    list_display = ('__unicode__', 'subject', 'newsletter_type')
+    show_on_top = ('subject', 'sender', 'reply_email',)
     raw_id_fields = ('header_image',)
-    fields = ('name', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url')
+    fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
+    exclude = ('default_job',)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ('newsletter_type',)
+        return self.readonly_fields
 
     def queryset(self, request):
-        qs = super(NewsletterAdmin, self).queryset(request)
-        return qs.filter(active=True)
+        return self.model.objects.active()
 
     def get_urls(self):
         urls = super(NewsletterAdmin, self).get_urls()
@@ -48,7 +50,7 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
         return my_urls + urls
     
 
-class NewsletterJobAdmin(admin.ModelAdmin):
+class JobAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
     actions = None
     list_display = ('newsletter', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
@@ -56,6 +58,7 @@ class NewsletterJobAdmin(admin.ModelAdmin):
     fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)
     readonly_fields = ('collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)    
     inlines = (LinkInline, MailInline,)
+    form = JobAdminForm
     
     def get_readonly_fields(self, request, obj):
         if obj.status in settings.JOB_STATUS_CAN_EDIT:
@@ -65,12 +68,12 @@ class NewsletterJobAdmin(admin.ModelAdmin):
         
     def statistics_view(self, request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
-        return render_to_response('admin/pennyblack/newsletterjob/statistics.html',{'object':obj})
+        return render_to_response('admin/pennyblack/job/statistics.html',{'object':obj})
     
     def change_view(self, request, object_id, extra_context={}):
         obj = get_object_or_404(self.model, pk=object_id)
         extra_context['can_send']=obj.can_send
-        return super(NewsletterJobAdmin, self).change_view(request, object_id, extra_context)
+        return super(JobAdmin, self).change_view(request, object_id, extra_context)
 
     def send_newsletter_view(self,request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
@@ -88,13 +91,12 @@ class NewsletterJobAdmin(admin.ModelAdmin):
             context = {'object':obj}
             context.update(csrf(request))
             return render_to_response(
-                'admin/pennyblack/newsletterjob/send_confirmation.html', context)
-        return super(NewsletterJobAdmin,self).response_change(request, obj)
+                'admin/pennyblack/job/send_confirmation.html', context)
+        return super(JobAdmin,self).response_change(request, obj)
 
     def get_urls(self):
-        urls = super(NewsletterJobAdmin, self).get_urls()
+        urls = super(JobAdmin, self).get_urls()
         info = self.model._meta.app_label, self.model._meta.module_name
-        print info
         my_urls = patterns('',
             url(r'^(?P<object_id>\d+)/statistics/$', self.admin_site.admin_view(self.statistics_view), name='%s_%s_statistics' % info),
             url(r'^(?P<object_id>\d+)/send/$', self.admin_site.admin_view(self.send_newsletter_view), name=('%s_%s_send' % info)),
@@ -107,5 +109,5 @@ class SenderAdmin(admin.ModelAdmin):
     readonly_fields = ('spf_result',)
 
 admin.site.register(Newsletter, NewsletterAdmin)
-admin.site.register(NewsletterJob,NewsletterJobAdmin)
+admin.site.register(Job,JobAdmin)
 admin.site.register(Sender,SenderAdmin)

@@ -28,6 +28,9 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
         except TemplateSyntaxError, e:
             self._errors["title"] = ErrorList([e])
         return cleaned_data
+    
+    class Meta:
+        exclude = ('image_thumb',)
 
 class TextOnlyNewsletterContent(RichTextContent):
     """

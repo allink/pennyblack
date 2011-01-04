@@ -4,7 +4,11 @@ TINYMCE_CONFIG_URL = getattr(settings, 'PENNYBLACK_TINYMCE_CONFIG_URL', 'admin/c
 
 LANGUAGES = getattr(settings, 'LANGUAGES')
 
-JOB_STATUS = getattr(settings, 'PENNYBLACK_JOB_STATUS', ((1,'Draft'),(11,'Pending'),(21,'Sending'),(31,'Finished'),(41,'Error'),(42,'Timeout (will retry)')))
+NEWSLETTER_TYPE = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE', ((1, 'Massmail'),(2, 'Workflow')))
+NEWSLETTER_TYPE_MASSMAIL = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE_MASSMAIL', (1,))
+NEWSLETTER_TYPE_WORKFLOW = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE_WORKFLOW', (2,))
+
+JOB_STATUS = getattr(settings, 'PENNYBLACK_JOB_STATUS', ((1,'Draft'),(11,'Pending'),(21,'Sending'),(31,'Finished'),(41,'Error'),(42,'Timeout (will retry)'),(32,'ReadOnly')))
 
 JOB_STATUS_CAN_SEND = getattr(settings, 'PENNYBLACK_JOB_STATUS_CAN_SEND', (1,41))
 JOB_STATUS_PENDING = getattr(settings, 'PENNYBLACK_JOB_STATUS_PENDING', (11,42))

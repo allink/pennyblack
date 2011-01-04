@@ -1,49 +1,63 @@
-from django.db import models
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
-from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse
-from django.utils import translation
-from django.core import mail
-from django.template import loader, Context, Template, RequestContext
-from django.contrib.sites.models import Site
+# coding=utf-8
 from django.db.models import signals
-from django.contrib import admin
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, HttpRequest
-from django.core.validators import email_re
-from django.template.loader import render_to_string
-from django.shortcuts import render_to_response
+from django.db import models
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
+from django.core import mail
 from django.core.mail.utils import DNS_NAME
-from django.core.context_processors import csrf
+from django.core.urlresolvers import reverse
+from django.core.validators import email_re
+from django.http import HttpResponseRedirect, HttpRequest
+from django.template import loader, Context, Template, RequestContext
+from django.template.loader import render_to_string
+from django.utils import translation
+from django.utils.translation import ugettext_lazy as _
 
-
-from feincms.models import Base
 from feincms.management.checker import check_database_schema
-from feincms.utils import copy_model_instance
+from feincms.models import Base
 from feincms.module.medialibrary.models import MediaFile
+from feincms.utils import copy_model_instance
 
-from pennyblack.forms import CollectionSelectForm
 from pennyblack import settings
 
 if settings.BOUNCE_DETECTION_ENABLE:
     from Mailman.Bouncers.BouncerAPI_new import ScanText
 
 import exceptions
-import hashlib
-import random
-import sys
 import datetime
-import spf
-import socket
+import hashlib
 import imaplib
+import random
+import socket
+import spf
+import sys
 
+class NewsletterManager(models.Manager):
+    def active(self):
+        """
+        Filters all active newsletters
+        """
+        return self.filter(active=True)
+    
+    def massmail(self):
+        """
+        Filters all newsletter avaiable for massmailing
+        """
+        return self.active().filter(newsletter_type__in=settings.NEWSLETTER_TYPE_MASSMAIL)
+        
+    def workflow(self):
+        """
+        Filters all newsletter avaiable in a workflow eg. signupmail
+        """
+        return self.active().filter(newsletter_type__in=settings.NEWSLETTER_TYPE_WORKFLOW)
       
 class Newsletter(Base):
     """A newsletter with subject and content
     can contain multiple jobs with mails to send"""
     name = models.CharField(verbose_name="Name", help_text="Wird nur intern verwendet.", max_length=100)
     active = models.BooleanField(default=True)
+    newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE, verbose_name="Art", help_text="Kann später nicht mehr geändert werden")
     sender = models.ForeignKey('Sender', verbose_name="Absender")
     subject = models.CharField(verbose_name="Betreff", max_length=250)
     reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
@@ -51,6 +65,9 @@ class Newsletter(Base):
     header_image = models.ForeignKey(MediaFile, verbose_name="Header Image")
     header_url = models.URLField()
     site = models.ForeignKey(Site, verbose_name="Seite")
+    default_job = models.ForeignKey('Job', verbose_name="Standart Job", related_name="is_default_job_of", blank=True, null=True)
+    
+    objects = NewsletterManager()
     
     #ga tracking
     utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
@@ -91,92 +108,45 @@ class Newsletter(Base):
         self.header_url = job.add_link(self.header_url)
         self.save()
     
+    def send(person, group=None):
+        """
+        Sends this newsletter to "person" with optional "group".
+        This works only with newsletters which are workflow newsletters.
+        """
+        if self.newsletter_type not in settings.NEWSLETTER_TYPE_WORKFLOW:
+            raise exceptions.AttributeError('only newsletters with type workflow can be sent')
+        if not self.default_job:
+            job=Job(newsletter=self,
+                status=32) #readonly
+            job.save()
+            self.default_job = job
+            self.save()
+        mail = self.default_job.create_mail(person)
+        try:
+            message = mail.get_message()
+            message.send()
+        except:
+            raise
+        else:
+            mail.mark_sent()
+            
+
+    
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
-class NewsletterReceiverMixin(object):
-    """
-    Abstract baseclass for every object that can receive a newsletter
-    """    
-    def get_email(self):
-        if hasattr(self,'email'):
-            return self.email
-        raise exceptions.NotImplementedError('Need a get_email implementation.')
 
-class NewsletterJobUnitMixin(object):
-    """
-    Abstract baseclass for every object which can be target of a NewsletterJob
-    """    
-    def create_newsletter(self, collection):
-        """
-        Creates a newsletter for every NewsletterReceiverMixin
-        """
-        job = NewsletterJob(group_object=self, collection=collection)
-        job.save()
-        job.create_mails()
-        return job
-        
-    def get_newsletter_receiver_collections(self):
-        """
-        Returns a dict of valid receiver collections
-        has to be overriden in the object to return a tuple of querysets
-        return (('all','clients'),)
-        """
-        raise exeptions.NotImplementedError("Override this method in your class!")
-    
-    def get_newsletter_receivers(self, collection):
-        """
-        Tries to get a queryset named after collection bevore giving up.
-        """
-        collection_to_attr = dict(self.get_newsletter_receiver_collections())
-        queryset = getattr(self, collection_to_attr[collection], None) # todo: wieder aufschluesseln
-        if queryset:
-            return queryset
-        raise exeptions.NotImplementedError("Didn't find any subset, maybe you didn't implement get_newsletter_receiver_collections.")
-
-class NewsletterJobUnitAdmin(admin.ModelAdmin):
-    change_form_template = "admin/pennyblack/jobunit/change_form.html"
-    
-    def create_newsletter(self, request, object_id):
-        obj = get_object_or_404(self.model, pk=object_id)
-        if len(obj.get_newsletter_receiver_collections()) == 1:
-            job = obj.create_newsletter(obj.get_newsletter_receiver_collections()[0][0])
-            return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(job.id,)))            
-        if request.method == 'POST':
-            form = CollectionSelectForm(data=request.POST, group_object=obj)
-            if form.is_valid():
-                job = obj.create_newsletter(form.cleaned_data['collection'])
-                return HttpResponseRedirect(reverse('admin:pennyblack_newsletterjob_change', args=(job.id,)))
-        else:
-            form = CollectionSelectForm(group_object=obj)
-        context = {
-            'adminform':form,
-            'form_url' : reverse('admin:pennyblack_newsletterjobunit_create_newsletter', args=(object_id,))
-        }
-        context.update(csrf(request))
-        return render_to_response('admin/pennyblack/jobunit/select_receiver_collection.html',context)
-            
-    def get_urls(self):
-        from django.conf.urls.defaults import patterns, url
-        urls = super(NewsletterJobUnitAdmin, self).get_urls()
-        my_urls = patterns('',
-            url(r'^(?P<object_id>\d+)/create_newsletter/$', self.admin_site.admin_view(self.create_newsletter), name='pennyblack_newsletterjobunit_create_newsletter'),
-        )
-        return my_urls + urls
-        
-
-
-class NewsletterJob(models.Model):
+class Job(models.Model):
     """A bunch of participants wich receive a newsletter"""
-    newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True, limit_choices_to = {'active': True})
+    newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True)
     status = models.IntegerField(choices=settings.JOB_STATUS, default=1)
     date_created = models.DateTimeField(verbose_name="Created", default=datetime.datetime.now())
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
     date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Finished", default=None)
 
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, null=True)
+    object_id = models.PositiveIntegerField(null=True)
     group_object = generic.GenericForeignKey('content_type', 'object_id')
-    collection = models.CharField(max_length=20)
+    collection = models.TextField(blank=True)
     
     #ga tracking
     utm_campaign = models.SlugField(verbose_name="Utm Campaign")
@@ -188,12 +158,12 @@ class NewsletterJob(models.Model):
         verbose_name_plural = "Newsletter delivery tasks"
         
     def __unicode__(self):
-        return (self.newsletter.subject if self.newsletter is not None else "unasigned NewsletterJob")
+        return (self.newsletter.subject if self.newsletter is not None else "unasigned Job")
     
     def delete(self, *args, **kwargs):
         if self.newsletter.active == False:
             self.newsletter.delete()
-        super(NewsletterJob, self).delete(*args, **kwargs)
+        super(Job, self).delete(*args, **kwargs)
     
     def count_mails_total(self):
         return str(self.mails.count())
@@ -239,14 +209,19 @@ class NewsletterJob(models.Model):
             return False
         return True
     
-    def create_mails(self):
+    def create_mails(self, queryset):
         """
-        Create mails for every NewsletterReceiverMixin in self.group_object.
+        Create mails for every NewsletterReceiverMixin in queryset.
         """
-        if not hasattr(self.group_object, 'get_newsletter_receivers'):
-            raise exceptions.NotImplementedError('Object needs to implement get_newsletter_receivers')
-        for receiver in self.group_object.get_newsletter_receivers(self.collection).all():
-            self.mails.add(Mail(person=receiver))
+        for receiver in queryset:
+            self.create_mail(receiver)
+            
+    def create_mail(self, receiver):
+        """
+        Creates a single mail. This is also used in workflow mail send process.
+        """
+        return Mail.objects.create(person=receiver, job=self)
+        
     
     def add_link(self, link):
         """
@@ -280,7 +255,7 @@ class NewsletterJob(models.Model):
         
 
 class Link(models.Model):
-    job = models.ForeignKey(NewsletterJob, related_name='links')
+    job = models.ForeignKey(Job, related_name='links')
     link_hash = models.CharField(max_length=32, blank=True)
     link_target = models.CharField(verbose_name="Adresse", max_length=500)
     
@@ -311,7 +286,7 @@ class LinkClick(models.Model):
 
 class Mail(models.Model):
     """
-    This is a single Mail, it's part of a NewsletterJob
+    This is a single Mail, it's part of a Job
     """
     viewed = models.DateTimeField(default=None, null=True)
     bounced = models.BooleanField(default=False)
@@ -319,7 +294,7 @@ class Mail(models.Model):
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
     person = generic.GenericForeignKey('content_type', 'object_id')
-    job = models.ForeignKey(NewsletterJob, related_name="mails")
+    job = models.ForeignKey(Job, related_name="mails")
     mail_hash = models.CharField(max_length=32, blank=True)
     email = models.EmailField() # the address is stored when the mail is sent
     
@@ -405,7 +380,7 @@ class Sender(models.Model):
     imap_username = models.CharField(verbose_name="IMAP Username", max_length=100, blank=True)
     imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
     imap_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
-    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143, blank=True)
+    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
     get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
     
     def __unicode__(self):
@@ -442,7 +417,11 @@ class Sender(models.Model):
                 if len(addrs) == 1 and len(addrs[0]) == 0:
                     continue
                 for addr in addrs:
-                    Mail.objects.filter(email=addr).filter(job__date_deliver_finished__gte=oldest_date).update(bounced=True)
+                    mailquery = Mail.objects.filter(email=addr).filter(job__date_deliver_finished__gte=oldest_date)
+                    mailquery.update(bounced=True)
+                    # ping all newsletter receivers
+                    for mail in mailquery:
+                        mail.person.bounce_ping()
                 if conn.copy(num,settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
                     conn.store(num, '+FLAGS', '\\Deleted')
             conn.expunge()
