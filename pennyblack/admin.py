@@ -32,7 +32,6 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     show_on_top = ('subject', 'sender', 'reply_email',)
     raw_id_fields = ('header_image',)
     fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
-    exclude = ('default_job',)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -53,7 +52,7 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
 class JobAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
     actions = None
-    list_display = ('newsletter', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
+    list_display = ('newsletter', 'group_object', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
     list_filter   = ('status', 'newsletter',)
     fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)
     readonly_fields = ('collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)    

@@ -5,6 +5,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.core import mail
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail.utils import DNS_NAME
 from django.core.urlresolvers import reverse
 from django.core.validators import email_re
@@ -65,7 +66,6 @@ class Newsletter(Base):
     header_image = models.ForeignKey(MediaFile, verbose_name="Header Image")
     header_url = models.URLField()
     site = models.ForeignKey(Site, verbose_name="Seite")
-    default_job = models.ForeignKey('Job', verbose_name="Standart Job", related_name="is_default_job_of", blank=True, null=True)
     
     objects = NewsletterManager()
     
@@ -115,13 +115,17 @@ class Newsletter(Base):
         """
         if self.newsletter_type not in settings.NEWSLETTER_TYPE_WORKFLOW:
             raise exceptions.AttributeError('only newsletters with type workflow can be sent')
-        if not self.default_job:
-            job=Job(newsletter=self,
+        # search newsletter job wich hash the same group or create it if it doesn't exist
+        try:
+            if group:
+                ctype = ContentType.objects.get_for_model(group)
+                job = self.jobs.get(content_type__pk=ctype.id, object_id=group.id)
+            else:
+                job = self.jobs.get(content_type=None)
+        except ObjectDoesNotExist:
+            job=Job.objects.create(newsletter=self, group_object=group,
                 status=32) #readonly
-            job.save()
-            self.default_job = job
-            self.save()
-        mail = self.default_job.create_mail(person)
+        mail = job.create_mail(person)
         try:
             message = mail.get_message()
             message.send()
