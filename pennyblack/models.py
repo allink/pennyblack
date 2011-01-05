@@ -108,7 +108,7 @@ class Newsletter(Base):
         self.header_url = job.add_link(self.header_url)
         self.save()
     
-    def send(person, group=None):
+    def send(self, person, group=None):
         """
         Sends this newsletter to "person" with optional "group".
         This works only with newsletters which are workflow newsletters.
