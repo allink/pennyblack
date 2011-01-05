@@ -27,6 +27,7 @@ setup(
         'Django(>=1.2.1)',
         'pydns',
         'pyspf',
+        'pil'
     ],
     
 )
