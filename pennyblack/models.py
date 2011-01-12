@@ -319,6 +319,13 @@ class Mail(models.Model):
             self.viewed = datetime.datetime.now()
             self.save()
     
+    def on_landing(self, request):
+        self.mark_viewed()
+        if hasattr(self.person, 'on_landing') and hasattr(self.person.on_landing, '__call__'):
+            self.person.on_landing(request)
+        if hasattr(self.group_object, 'on_landing') and hasattr(self.group_object.on_landing, '__call__'):
+            self.group_object.on_landing(request)
+    
     def is_valid(self):
         """
         Checks if this Mail is valid

@@ -31,7 +31,7 @@ def redirect_link(request, mail_hash, link_hash):
         link = Link.objects.get(link_hash=link_hash)
     except ObjectDoesNotExist:
         return HttpResponseRedirect('/')
-    mail.mark_viewed()
+    mail.on_landing(request)
     return HttpResponseRedirect(link.click(mail))
     
 
