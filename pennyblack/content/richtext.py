@@ -13,6 +13,7 @@ from feincms.module.medialibrary.models import MediaFile
 import re
 import os
 import Image
+import exceptions
 
 HREF_RE = re.compile(r'href\="([^"><]+)"')
 
@@ -23,10 +24,15 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
             t = Template(cleaned_data['text'])
         except TemplateSyntaxError, e:
             self._errors["text"] = ErrorList([e])
+        except exceptions.KeyError:
+            pass
         try:
+            print cleaned_data
             t = Template(cleaned_data['title'])
         except TemplateSyntaxError, e:
             self._errors["title"] = ErrorList([e])
+        except exceptions.KeyError:
+            pass
         return cleaned_data
     
     class Meta:
