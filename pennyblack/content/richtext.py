@@ -27,7 +27,6 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
         except exceptions.KeyError:
             pass
         try:
-            print cleaned_data
             t = Template(cleaned_data['title'])
         except TemplateSyntaxError, e:
             self._errors["title"] = ErrorList([e])
