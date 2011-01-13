@@ -52,6 +52,20 @@ class NewsletterManager(models.Manager):
         Filters all newsletter avaiable in a workflow eg. signupmail
         """
         return self.active().filter(newsletter_type__in=settings.NEWSLETTER_TYPE_WORKFLOW)
+    
+    def get_workflow_newsletter_by_name(self, name):
+        try:
+            return self.workflow().get(name__iexact=name, language=translation.get_language())
+        except ObjectDoesNotExist:
+            pass
+        try:
+            return self.workflow().get(name__iexact=name, language=settings.LANGUAGE_CODE)
+        except ObjectDoesNotExist:
+            pass
+        try:
+            return self.workflow().filter(name__iexact=name)[0]
+        except:
+            return None
       
 class Newsletter(Base):
     """A newsletter with subject and content

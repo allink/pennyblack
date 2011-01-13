@@ -16,3 +16,12 @@ class Settings(object):
                 setattr(self, setting, getattr(settings_module, setting))
 
 settings = LazySettings()
+
+def send_newsletter(newsletter_name, *args, **kwargs):
+    """
+    Gets a newsletter by its name and tries to send it to receiver
+    """
+    from pennyblack.models import Newsletter
+    newsletter = Newsletter.objects.get_workflow_newsletter_by_name(newsletter_name)
+    if newsletter:
+        newsletter.send(*args, **kwargs)

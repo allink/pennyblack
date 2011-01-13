@@ -3,6 +3,7 @@ from django.conf import settings
 TINYMCE_CONFIG_URL = getattr(settings, 'PENNYBLACK_TINYMCE_CONFIG_URL', 'admin/content/richtext/init.html')
 
 LANGUAGES = getattr(settings, 'LANGUAGES')
+LANGUAGE_CODE = getattr(settings, 'LANGUAGE_CODE')
 
 NEWSLETTER_TYPE = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE', ((1, 'Massmail'),(2, 'Workflow')))
 NEWSLETTER_TYPE_MASSMAIL = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE_MASSMAIL', (1,))
