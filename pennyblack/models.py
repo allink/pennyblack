@@ -115,19 +115,29 @@ class Newsletter(Base):
         """
         Searches al links in content sections
         """
+        if self.is_workflow():
+            job = self.get_default_job()
         for cls in self._feincms_content_types:
             for content in cls.objects.filter(parent=self):
                 content.replace_links(job)
                 content.save()
         self.header_url = job.add_link(self.header_url)
         self.save()
+        
+    def get_default_job(self):
+        try:
+            return self.jobs.get(content_type=None)
+        except ObjectDoesNotExist:
+            return Job.objects.create(newsletter=self, status=32)            
     
+    def is_workflow(self):
+        return self.newsletter_type in settings.NEWSLETTER_TYPE_WORKFLOW 
     def send(self, person, group=None):
         """
         Sends this newsletter to "person" with optional "group".
         This works only with newsletters which are workflow newsletters.
         """
-        if self.newsletter_type not in settings.NEWSLETTER_TYPE_WORKFLOW:
+        if not self.is_workflow():
             raise exceptions.AttributeError('only newsletters with type workflow can be sent')
         # search newsletter job wich hash the same group or create it if it doesn't exist
         try:
@@ -143,6 +153,7 @@ class Newsletter(Base):
                 kw = {}
             job=Job.objects.create(newsletter=self, status=32, #readonly
                 **kw)
+        self.replace_links(job)
         mail = job.create_mail(person)
         try:
             message = mail.get_message()
@@ -341,7 +352,9 @@ class Mail(models.Model):
         self.mark_viewed()
         if hasattr(self.person, 'on_landing') and hasattr(self.person.on_landing, '__call__'):
             self.person.on_landing(request)
-        if hasattr(self.group_object, 'on_landing') and hasattr(self.group_object.on_landing, '__call__'):
+        if self.job.content_type is not None and \
+            hasattr(self.job.group_object, 'on_landing') and \
+            hasattr(self.job.group_object.on_landing, '__call__'):
             self.group_object.on_landing(request)
     
     def is_valid(self):
