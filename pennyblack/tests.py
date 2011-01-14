@@ -1,6 +1,8 @@
-from pennyblack.models import Newsletter, NewsletterReceiverMixin, Mail
-from pennyblack.content.models import RichTextContent
+from pennyblack.models import Newsletter, Mail
+from pennyblack.options import NewsletterReceiverMixin
+from pennyblack.content.richtext import TextOnlyNewsletterContent
 from django.db import models
+from django.core.urlresolvers import reverse
 import unittest
 
 class NewsletterTestCase(unittest.TestCase):
@@ -27,19 +29,33 @@ class RichtextContentTest(unittest.TestCase):
     content = None
     job = None
     class Job(object):
+        def __init__(self, link):
+            self.times = 0
+            self.link = link
         def add_link(self, link):
-            return 'http://replaced.link'
+            self.times += 1
+            return '{{base_url}}' + self.link
 
     def setUp(self):
-        self.job = self.Job()
-        self.content = RichTextContent(text='<a href="http://www.test.com">link</a>')
+        self.content = TextOnlyNewsletterContent(text='<a href="http://www.test.com">link</a>')
+        self.link = reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':'1234'}).replace('%7B','{').replace('%7D','}')
+        self.job = self.Job(self.link)
         
     
     def test_replace_links(self):
         self.content.replace_links(self.job)
-        self.assertEqual(self.content.text,'<a href="http://replaced.link">link</a>')
+        self.assertEqual(self.content.text,'<a href="{{base_url}}%s">link</a>' % self.link)
 
     def test_replace_multiple_links(self):
         self.content.text='<a href="http://www.testmultiple.com">link</a><a href="http://www.2ndlink.com">2ndlink</a>'
         self.content.replace_links(self.job)
-        self.assertEqual(self.content.text,'<a href="http://replaced.link">link</a><a href="http://replaced.link">2ndlink</a>')
+        self.assertEqual(self.content.text,'<a href="{{base_url}}%s">link</a><a href="{{base_url}}%s">2ndlink</a>' % (self.link, self.link))
+    
+    def test_dont_replace_twice(self):
+        self.content.text = '<a href="http://www.allink.ch">link</a>'
+        self.content.replace_links(self.job)
+        old_times = self.job.times
+        last_text = self.content.text[:]
+        self.content.replace_links(self.job)
+        self.assertEqual(self.job.times, old_times)
+        self.assertEqual(self.content.text, last_text)

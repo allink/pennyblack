@@ -137,8 +137,12 @@ class Newsletter(Base):
             else:
                 job = self.jobs.get(content_type=None)
         except ObjectDoesNotExist:
-            job=Job.objects.create(newsletter=self, group_object=group,
-                status=32) #readonly
+            if group:
+                kw = {'group_object':group}
+            else:
+                kw = {}
+            job=Job.objects.create(newsletter=self, status=32, #readonly
+                **kw)
         mail = job.create_mail(person)
         try:
             message = mail.get_message()
@@ -247,7 +251,7 @@ class Job(models.Model):
         """
         link = Link(link_target=link, job=self)
         link.save()
-        return self.newsletter.get_base_url() + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
+        return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     
     def send(self):
         self.newsletter = self.newsletter.create_snapshot()
@@ -391,6 +395,7 @@ class Mail(models.Model):
             'person': self.person,
             'group_object': self.job.group_object,
             'mail':self,
+            'base_url': self.job.newsletter.get_base_url()
         }
     
     def get_header_url(self):
