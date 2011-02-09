@@ -1,5 +1,4 @@
 from django.core import files
-from django.core.urlresolvers import resolve
 from django.db import models
 from django.forms.util import ErrorList
 from django.template import Context, Template, TemplateSyntaxError
@@ -7,6 +6,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from pennyblack import settings
+from pennyblack.models import check_if_redirect_url
 
 from feincms.content.richtext.models import RichTextContentAdminForm, RichTextContent
 from feincms.module.medialibrary.models import MediaFile
@@ -64,13 +64,8 @@ class TextOnlyNewsletterContent(RichTextContent):
         offset = 0
         for match in HREF_RE.finditer(self.text):
             link = match.group(1)
-            if '{{base_url}}' == link[:len('{{base_url}}')]:
-                try:
-                    result = resolve(link[len('{{base_url}}'):])
-                    if result[0].func_name == 'redirect_link':
-                        continue
-                except:
-                    pass
+            if check_if_redirect_url(link):
+                continue
             replacelink = job.add_link(link)
             self.text = ''.join((self.text[:match.start(1)+offset], replacelink, self.text[match.end(1)+offset:]))
             offset += len(replacelink) - len(match.group(1))
