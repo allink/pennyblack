@@ -7,7 +7,7 @@ from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail.utils import DNS_NAME
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.core.validators import email_re
 from django.http import HttpResponseRedirect, HttpRequest
 from django.template import loader, Context, Template, RequestContext
@@ -34,6 +34,9 @@ import socket
 import spf
 import sys
 
+#-----------------------------------------------------------------------------
+# Newsletter
+#-----------------------------------------------------------------------------
 class NewsletterManager(models.Manager):
     def active(self):
         """
@@ -66,7 +69,7 @@ class NewsletterManager(models.Manager):
             return self.workflow().filter(name__iexact=name)[0]
         except:
             return None
-      
+
 class Newsletter(Base):
     """A newsletter with subject and content
     can contain multiple jobs with mails to send"""
@@ -121,8 +124,9 @@ class Newsletter(Base):
             for content in cls.objects.filter(parent=self):
                 content.replace_links(job)
                 content.save()
-        self.header_url = job.add_link(self.header_url)
-        self.save()
+        if not check_if_redirect_url(self.header_url):
+            self.header_url = job.add_link(self.header_url)
+            self.save()
         
     def get_default_job(self):
         try:
@@ -168,6 +172,9 @@ class Newsletter(Base):
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 
+#-----------------------------------------------------------------------------
+# Job
+#-----------------------------------------------------------------------------
 class Job(models.Model):
     """A bunch of participants wich receive a newsletter"""
     newsletter = models.ForeignKey(Newsletter, related_name="jobs", null=True)
@@ -285,7 +292,22 @@ class Job(models.Model):
             self.status = 31
             self.date_deliver_finished = datetime.datetime.now()
         self.save()
-        
+
+#-----------------------------------------------------------------------------
+# Link
+#-----------------------------------------------------------------------------
+def check_if_redirect_url(url):
+    """
+    Checks if the url is a redirect url
+    """
+    if '{{base_url}}' == url[:len('{{base_url}}')]:
+        try:
+            result = resolve(url[len('{{base_url}}'):])
+            if result[0].func_name == 'redirect_link':
+                return True
+        except:
+            pass
+    return False
 
 class Link(models.Model):
     job = models.ForeignKey(Job, related_name='links')
@@ -317,6 +339,9 @@ class LinkClick(models.Model):
     mail = models.ForeignKey('Mail', related_name='clicks')
     date = models.DateTimeField(default=datetime.datetime.now())
 
+#-----------------------------------------------------------------------------
+# Mail
+#-----------------------------------------------------------------------------
 class Mail(models.Model):
     """
     This is a single Mail, it's part of a Job
@@ -417,6 +442,9 @@ class Mail(models.Model):
         """
         return self.job.newsletter.header_url.replace('{{mail.mail_hash}}',self.mail_hash)
 
+#-----------------------------------------------------------------------------
+# Sender
+#-----------------------------------------------------------------------------
 class Sender(models.Model):
     email = models.EmailField(verbose_name="Von E-Mail Adresse")
     name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
