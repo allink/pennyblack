@@ -28,7 +28,6 @@ def newsletterstyle(parser, token):
     key = parser.compile_filter(bits[2])
     style = parser.parse(('endnewsletterstyle',))
     parser.delete_first_token()
-    print style
     return NewsletterstyleNode(key, style, request)
 newsletterstyle = register.tag(newsletterstyle)
 

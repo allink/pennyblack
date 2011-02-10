@@ -510,7 +510,6 @@ class Sender(models.Model):
             conn.close()
             conn.logout()
         except imaplib.IMAP4.error, e:
-            print e
             return
         
     
