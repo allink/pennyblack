@@ -32,6 +32,7 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     show_on_top = ('subject', 'sender', 'reply_email',)
     raw_id_fields = ('header_image',)
     fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
+    exclude = ('header_url_replaced',)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:

@@ -82,6 +82,7 @@ class Newsletter(Base):
     language = models.CharField(max_length=6, verbose_name="Sprache", choices=settings.LANGUAGES)
     header_image = models.ForeignKey(MediaFile, verbose_name="Header Image")
     header_url = models.URLField()
+    header_url_replaced = models.CharField(max_length=250, default='')
     site = models.ForeignKey(Site, verbose_name="Seite")
     
     objects = NewsletterManager()
@@ -124,9 +125,19 @@ class Newsletter(Base):
             for content in cls.objects.filter(parent=self):
                 content.replace_links(job)
                 content.save()
-        if not check_if_redirect_url(self.header_url):
-            self.header_url = job.add_link(self.header_url)
-            self.save()
+        # todo: hier coden
+        if self.header_url_replaced != '':
+            # try to find the link and compare it to the header_url but
+            # replace the link if something goes wrong
+            try:
+                link_hash = resolve(self.header_url_replaced[len('{{base_url}}'):])[2]['link_hash']
+                link = Link.objects.get(link_hash=link_hash)
+                if link.link_target == self.header_url:
+                    return
+            except:
+                pass
+        self.header_url_replaced = job.add_link(self.header_url)
+        self.save()
         
     def get_default_job(self):
         try:
@@ -440,7 +451,7 @@ class Mail(models.Model):
         """
         Gets the header url for this email
         """
-        return self.job.newsletter.header_url.replace('{{mail.mail_hash}}',self.mail_hash)
+        return self.job.newsletter.header_url_replaced.replace('{{mail.mail_hash}}',self.mail_hash)
 
 #-----------------------------------------------------------------------------
 # Sender
