@@ -81,6 +81,7 @@ class TextOnlyNewsletterContent(RichTextContent):
     
     def render(self, request, **kwargs):
         context = request.content_context
+        context['request'] = request
         context.update({'content':self, 'content_width':settings.NEWSLETTER_CONTENT_WIDTH})
         if hasattr(self,'get_extra_context'):
             context.update(self.get_extra_context())

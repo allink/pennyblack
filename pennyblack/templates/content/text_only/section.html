@@ -1,11 +1,12 @@
+{% load pennyblack_tags %}
 <table width="{{content_width}}" border="0" cellspacing="0" cellpadding="0">
   <tr>
-    <td align="left" class="title"><h2>{% block title %}{% endblock %}</h2></td>
+    <td align="left" class="title"><h2 style="{% get_newsletterstyle request text_only_title %}">{% block title %}{% endblock %}</h2></td>
   </tr>
   <tr>
     <td height="10">&nbsp;</td>
   </tr>
   <tr>
-    <td align="left" valign="top">{% block text %}{% endblock %}</td>
+    <td align="left" valign="top" style="{% get_newsletterstyle request text_only_text %}">{% block text %}{% endblock %}</td>
   </tr>
 </table>
