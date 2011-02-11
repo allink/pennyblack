@@ -1,4 +1,5 @@
 from django.contrib.contenttypes import generic
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils import translation
 
@@ -96,14 +97,14 @@ class Job(models.Model):
         """
         Creates a single mail. This is also used in workflow mail send process.
         """
-        return Mail.objects.create(person=receiver, job=self)
+        return self.mails.create(person=receiver)
         
     
     def add_link(self, link):
         """
         Adds a link and returns a replacement link
         """
-        link = Link(link_target=link, job=self)
+        link = self.links.create(link_target=link)
         link.save()
         return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     
