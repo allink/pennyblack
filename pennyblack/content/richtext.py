@@ -6,7 +6,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from pennyblack import settings
-from pennyblack.models import check_if_redirect_url
+from pennyblack.models.link import check_if_redirect_url
 
 from feincms.content.richtext.models import RichTextContentAdminForm, RichTextContent
 from feincms.module.medialibrary.models import MediaFile
