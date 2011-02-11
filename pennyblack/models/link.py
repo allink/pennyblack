@@ -1,10 +1,10 @@
 from django.core.urlresolvers import resolve
 from django.db import models
 
+import datetime
 import hashlib
 import random
 
-from datetime import datetime
 #-----------------------------------------------------------------------------
 # Link
 #-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ class Link(models.Model):
 class LinkClick(models.Model):
     link = models.ForeignKey('pennyblack.Link', related_name='clicks')
     mail = models.ForeignKey('pennyblack.Mail', related_name='clicks')
-    date = models.DateTimeField(default=datetime.now())
+    date = models.DateTimeField(default=datetime.datetime.now())
     
     class Meta:
         app_label = 'pennyblack'

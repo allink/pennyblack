@@ -6,6 +6,7 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.template import loader, Context, Template, RequestContext
 
+import datetime
 import hashlib
 import random
 

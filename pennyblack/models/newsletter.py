@@ -1,4 +1,6 @@
 # coding=utf-8
+import exceptions
+
 from django.db import models
 from django.db.models import signals
 from django.utils import translation
@@ -9,8 +11,6 @@ from feincms.models import Base
 from feincms.utils import copy_model_instance
 
 from pennyblack import settings
-
-import exceptions
 
 #-----------------------------------------------------------------------------
 # Newsletter
@@ -53,7 +53,8 @@ class Newsletter(Base):
     can contain multiple jobs with mails to send"""
     name = models.CharField(verbose_name="Name", help_text="Wird nur intern verwendet.", max_length=100)
     active = models.BooleanField(default=True)
-    newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE, verbose_name="Art", help_text="Kann später nicht mehr geändert werden")
+    newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE,
+        verbose_name="Art", help_text="Kann später nicht mehr geändert werden")
     sender = models.ForeignKey('pennyblack.Sender', verbose_name="Absender")
     subject = models.CharField(verbose_name="Betreff", max_length=250)
     reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
@@ -61,13 +62,12 @@ class Newsletter(Base):
     header_image = models.ForeignKey('medialibrary.MediaFile', verbose_name="Header Image")
     header_url = models.URLField()
     header_url_replaced = models.CharField(max_length=250, default='')
-    site = models.ForeignKey('sites.Site', verbose_name="Seite")
-    
-    objects = NewsletterManager()
-    
+    site = models.ForeignKey('sites.Site', verbose_name="Seite")    
     #ga tracking
     utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
     utm_medium = models.SlugField(verbose_name="Utm Medium", default="cpc")
+    
+    objects = NewsletterManager()
 
     class Meta:
         ordering = ('subject',)
@@ -145,8 +145,7 @@ class Newsletter(Base):
                 kw = {'group_object':group}
             else:
                 kw = {}
-            job=Job.objects.create(newsletter=self, status=32, #readonly
-                **kw)
+            job=Job.objects.create(newsletter=self, status=32, **kw) # 32=readonly
         self.replace_links(job)
         mail = job.create_mail(person)
         try:
