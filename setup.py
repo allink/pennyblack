@@ -9,7 +9,13 @@ setup(
     author = 'Marc Egli',
     author_email = 'egli@allink.ch',
     url = 'http://github.com/allink/pennyblack/',
-    packages=['pennyblack', 'pennyblack.conf', 'pennyblack.content'],
+    packages=[
+        'pennyblack',
+        'pennyblack.management',
+        'pennyblack.management.commands',
+        'pennyblack.models',
+        'pennyblack.templatetags',
+    ],
     package_data={'pennyblack':'templates/*.html'},
     classifiers=[
         'Development Status :: 1 - Planning',
@@ -27,7 +33,7 @@ setup(
         'Django(>=1.2.1)',
         'pydns',
         'pyspf',
-        'pil'
+        'pil',
     ],
     
 )
