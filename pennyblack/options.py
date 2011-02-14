@@ -12,7 +12,7 @@ import exceptions
 
 class NewsletterReceiverMixin(object):
     """
-    Abstract baseclass for every object that can receive a newsletter
+    Mixin for every object that can receive a newsletter
     """    
     def get_email(self):
         if hasattr(self,'email'):
@@ -24,7 +24,7 @@ class NewsletterReceiverMixin(object):
 
 class JobUnitMixin(object):
     """
-    Abstract baseclass for every object which can be target of a Job
+    Mixin for every object which can be target of a Job
     """    
     def create_newsletter(self, form_data=None):
         """
@@ -63,9 +63,14 @@ class JobUnitMixin(object):
 
 
 class JobUnitAdmin(admin.ModelAdmin):
+    """
+    Admin model for objects wich are capable of sending newsletters to it's
+    members.
+    """
     change_form_template = "admin/pennyblack/jobunit/change_form.html"
     collection_select_form = CollectionSelectForm
     collection_selection_form_extra_fields = dict()
+    
     def create_newsletter(self, request, object_id):
         info = self.model._meta.app_label, self.model._meta.module_name
         obj = get_object_or_404(self.model, pk=object_id)

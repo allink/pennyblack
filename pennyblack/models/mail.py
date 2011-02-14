@@ -33,7 +33,7 @@ class Mail(models.Model):
         app_label = 'pennyblack'
     
     def __unicode__(self):
-        return '%s to %s' % (self.job, self.person,)
+        return u'%s to %s' % (self.job, self.person,)
         
     def save(self, **kwargs):
         if self.mail_hash == u'':
@@ -41,15 +41,27 @@ class Mail(models.Model):
         super(Mail, self).save(**kwargs)
     
     def mark_sent(self):
+        """
+        Marks the email as beeing sent.
+        """
         self.sent = True
         self.save()
     
     def mark_viewed(self):
+        """
+        Marks the email as beeing viewed and if it's not already viewed it
+        stores the view date.
+        """
         if not self.viewed:
             self.viewed = datetime.datetime.now()
             self.save()
     
     def on_landing(self, request):
+        """
+        Is executed every time a user landed on the website after clicking on
+        a link in this email. It tries to execute the on_landing method on the
+        person object and on the group object.
+        """
         self.mark_viewed()
         if hasattr(self.person, 'on_landing') and hasattr(self.person.on_landing, '__call__'):
             self.person.on_landing(request)
@@ -60,11 +72,17 @@ class Mail(models.Model):
     
     def is_valid(self):
         """
-        Checks if this Mail is valid
+        Checks if this Mail is valid by validating the email address.
         """
         return email_re.match(self.person.get_email())
 
     def get_email(self):
+        """
+        Gets the email address. If it has no email address set, it tries to
+        get it from the person object.
+        """
+        if self.email != '':
+            return self.email
         return self.person.get_email()
     get_email.short_description = "E-Mail"
 
@@ -89,7 +107,8 @@ class Mail(models.Model):
     
     def get_content(self, webview=False):
         """
-        Returns the mail html content
+        Renders the email content. If webview is True it includes also a
+        html header and doesn't display the webview link.
         """
         newsletter = self.job.newsletter
         context = self.get_context()
@@ -103,7 +122,7 @@ class Mail(models.Model):
     
     def get_context(self):
         """
-        Returns the context of this email as a dict
+        Returns the context of this email as a dict.
         """        
         return {
             'person': self.person,
@@ -114,6 +133,6 @@ class Mail(models.Model):
     
     def get_header_url(self):
         """
-        Gets the header url for this email
+        Gets the header url for this email.
         """
         return self.job.newsletter.header_url_replaced.replace('{{mail.mail_hash}}',self.mail_hash)

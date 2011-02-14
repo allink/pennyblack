@@ -43,11 +43,11 @@ class Job(models.Model):
         super(Job, self).delete(*args, **kwargs)
     
     def count_mails_total(self):
-        return str(self.mails.count())
+        return self.mails.count()
     count_mails_total.short_description = '# of mails'
     
     def count_mails_sent(self):
-        return str(self.mails.filter(sent=True).count())
+        return self.mails.filter(sent=True).count()
     count_mails_sent.short_description = '# of mails sent'
 
     @property
@@ -57,7 +57,7 @@ class Job(models.Model):
         return round(float(self.count_mails_sent())/float(self.count_mails_total()) * 100)
     
     def count_mails_viewed(self):
-        return str(self.mails.exclude(viewed=None).count())
+        return self.mails.exclude(viewed=None).count()
     count_mails_viewed.short_description = '# of views'
 
     @property
@@ -67,7 +67,7 @@ class Job(models.Model):
         return round(float(self.count_mails_viewed())/float(self.count_mails_total()) * 100)
     
     def count_mails_bounced(self):
-        return str(self.mails.filter(bounced=True).count())
+        return self.mails.filter(bounced=True).count()
     count_mails_bounced.short_description = '# of bounces'
 
     @property

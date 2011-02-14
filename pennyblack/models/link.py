@@ -30,8 +30,14 @@ class Link(models.Model):
         verbose_name = 'Link'
         verbose_name_plural = 'Links'
         app_label = 'pennyblack'
+
+    def __unicode__(self):
+        return self.link_target
     
     def click_count(self):
+        """
+        Returns the total click count.
+        """
         return self.clicks.count()
     click_count.short_description = 'Click count'
     
@@ -41,9 +47,6 @@ class Link(models.Model):
         """
         click = LinkClick(link=self, mail=mail)
         click.save()
-        return self.link_target
-
-    def __unicode__(self):
         return self.link_target
 
     def save(self, **kwargs):

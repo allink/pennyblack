@@ -35,6 +35,12 @@ class NewsletterManager(models.Manager):
         return self.active().filter(newsletter_type__in=settings.NEWSLETTER_TYPE_WORKFLOW)
     
     def get_workflow_newsletter_by_name(self, name):
+        """
+        Tries to get a newsletter with the given name. First it tries to find
+        one where the language matches the active language, later it tries to
+        find one with the default language and if it doesn't find one it tries
+        to get any newsletter with the given name before giving up.
+        """
         try:
             return self.workflow().get(name__iexact=name, language=translation.get_language())
         except models.ObjectDoesNotExist:
@@ -79,12 +85,19 @@ class Newsletter(Base):
         return self.name
     
     def is_valid(self):
+        """
+        Checks if the newsletter is valid. A newsletter needs to have a
+        subject to be valid.
+        """
         if self.subject == '':
             return False
         # todo: check if email is valid
         return True
     
     def create_snapshot(self):
+        """
+        Makes a copy of itselve with all the content and returns the copy.
+        """
         snapshot = copy_model_instance(self, exclude=('id',))
         snapshot.active = False
         snapshot.save()
@@ -96,7 +109,10 @@ class Newsletter(Base):
         
     def replace_links(self, job):
         """
-        Searches al links in content sections
+        Searches al links in content sections and replaces them with a link to
+        the link tracking view.
+        It also generates the header_url_replaced which is the same but for
+        the header url.
         """
         if self.is_workflow():
             job = self.get_default_job()
@@ -119,13 +135,21 @@ class Newsletter(Base):
         self.save()
         
     def get_default_job(self):
+        """
+        Tries to get the default job. If no default job exists it creates one.
+        This is only used in workflow newsletters.
+        """
         try:
             return self.jobs.get(content_type=None)
         except models.ObjectDoesNotExist:
             return Job.objects.create(newsletter=self, status=32)            
     
     def is_workflow(self):
+        """
+        Returns True if it's type is a workflow newsletter.
+        """
         return self.newsletter_type in settings.NEWSLETTER_TYPE_WORKFLOW 
+
     def send(self, person, group=None):
         """
         Sends this newsletter to "person" with optional "group".
