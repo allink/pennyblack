@@ -1,6 +1,6 @@
 from django.conf import settings
 
-TINYMCE_CONFIG_URL = getattr(settings, 'PENNYBLACK_TINYMCE_CONFIG_URL', 'admin/content/richtext/init.html')
+TINYMCE_CONFIG_URL = getattr(settings, 'PENNYBLACK_TINYMCE_CONFIG_URL', 'admin/pennyblack/tiny_mce/init.html')
 
 LANGUAGES = getattr(settings, 'LANGUAGES')
 LANGUAGE_CODE = getattr(settings, 'LANGUAGE_CODE')
