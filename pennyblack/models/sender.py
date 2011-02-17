@@ -8,6 +8,7 @@ if settings.BOUNCE_DETECTION_ENABLE:
     from Mailman.Bouncers.BouncerAPI_new import ScanText
 
 import imaplib
+import datetime
 import socket
 import spf
 
