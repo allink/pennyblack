@@ -22,6 +22,7 @@ class Sender(models.Model):
     imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
     imap_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
     imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
+    imap_ssl = models.BooleanField(verbose_name="IMAP SSL", default=False)
     get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
     
     class Meta:
@@ -50,7 +51,11 @@ class Sender(models.Model):
             return
         oldest_date = datetime.datetime.now()-datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
         try:
-            conn = imaplib.IMAP4(self.imap_server, self.imap_port)
+            if self.imap_ssl:
+                ssl_class = imaplib.IMAP4_SSL
+            else:
+                ssl_class = imaplib.IMAP4
+            conn = ssl_class(self.imap_server, self.imap_port)
             conn.login(self.imap_username, self.imap_password)
             if conn.select(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] != 'OK':
                 conn.create(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)
