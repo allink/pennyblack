@@ -1,6 +1,7 @@
+from django.contrib import admin
+from django.contrib.contenttypes import generic
 from django.core import mail
 from django.core.validators import email_re
-from django.contrib.contenttypes import generic
 from django.db import models
 from django.http import HttpRequest
 from django.template.loader import render_to_string
@@ -136,3 +137,9 @@ class Mail(models.Model):
         Gets the header url for this email.
         """
         return self.job.newsletter.header_url_replaced.replace('{{mail.mail_hash}}',self.mail_hash)
+
+class MailInline(admin.TabularInline):
+    model = Mail
+    max_num = 0
+    fields = ('get_email',)
+    readonly_fields = ('get_email',)

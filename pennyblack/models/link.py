@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.core.urlresolvers import resolve
 from django.db import models
 
@@ -62,3 +63,8 @@ class LinkClick(models.Model):
     class Meta:
         app_label = 'pennyblack'
         
+class LinkInline(admin.TabularInline):
+    model = Link
+    max_num = 0
+    can_delete = False
+    readonly_fields = ('link_hash', 'click_count',)

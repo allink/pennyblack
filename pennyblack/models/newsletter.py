@@ -1,11 +1,14 @@
 # coding=utf-8
 import exceptions
 
+from django.conf.urls.defaults import patterns, url
+from django.contrib import admin
 from django.db import models
 from django.db.models import signals
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
+from feincms.admin import editor
 from feincms.management.checker import check_database_schema
 from feincms.models import Base
 from feincms.utils import copy_model_instance
@@ -183,3 +186,25 @@ class Newsletter(Base):
 
     
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
+
+class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
+    list_display = ('__unicode__', 'subject', 'newsletter_type')
+    show_on_top = ('subject', 'sender', 'reply_email',)
+    raw_id_fields = ('header_image',)
+    fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
+    exclude = ('header_url_replaced',)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ('newsletter_type',)
+        return self.readonly_fields
+
+    def queryset(self, request):
+        return self.model.objects.active()
+
+    def get_urls(self):
+        urls = super(NewsletterAdmin, self).get_urls()
+        my_urls = patterns('',
+            (r'^(?P<newsletter_id>\d+)/preview/$', 'pennyblack.views.preview')
+        )
+        return my_urls + urls

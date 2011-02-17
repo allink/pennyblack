@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.core.mail.utils import DNS_NAME
 from django.db import models
 
@@ -74,3 +75,8 @@ class Sender(models.Model):
         except imaplib.IMAP4.error, e:
             return
         
+class SenderAdmin(admin.ModelAdmin):
+    list_display = ('email', 'name',)
+    fields = ('email', 'name', 'imap_username', 'imap_password', 'imap_server', 'imap_port', 'get_bounce_emails', 'spf_result',)
+    readonly_fields = ('spf_result',)
+

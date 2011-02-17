@@ -1,5 +1,4 @@
 from django import forms
-from pennyblack.models import Newsletter
 
 class CollectionSelectForm(forms.Form):
     collections = forms.MultipleChoiceField()
@@ -9,7 +8,3 @@ class CollectionSelectForm(forms.Form):
        self.fields['collections'].choices = choices
        for key, field in extra_fields.items():
            self.fields[key] = field
-
-
-class JobAdminForm(forms.ModelForm):
-    newsletter = forms.ModelChoiceField(queryset=Newsletter.objects.massmail())
