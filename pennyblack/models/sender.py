@@ -83,6 +83,6 @@ class Sender(models.Model):
         
 class SenderAdmin(admin.ModelAdmin):
     list_display = ('email', 'name',)
-    fields = ('email', 'name', 'imap_username', 'imap_password', 'imap_server', 'imap_port', 'get_bounce_emails', 'spf_result',)
+    fields = ('email', 'name', 'imap_username', 'imap_password', 'imap_server', 'imap_port', 'imap_ssl', 'get_bounce_emails', 'spf_result',)
     readonly_fields = ('spf_result',)
 
