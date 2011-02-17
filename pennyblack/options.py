@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 
 from pennyblack.forms import CollectionSelectForm
-from pennyblack.models import Job
+from pennyblack.models.job import Job
 
 import exceptions
 
