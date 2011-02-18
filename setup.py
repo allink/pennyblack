@@ -11,9 +11,11 @@ setup(
     url = 'http://github.com/allink/pennyblack/',
     packages=[
         'pennyblack',
+        'pennyblack.content',
         'pennyblack.management',
         'pennyblack.management.commands',
         'pennyblack.models',
+        'pennyblack.module.subscriber',
         'pennyblack.templatetags',
     ],
     package_data={'pennyblack':'templates/*.html'},
