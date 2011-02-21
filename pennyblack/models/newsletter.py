@@ -146,7 +146,7 @@ class Newsletter(Base):
         try:
             return self.jobs.get(content_type=None)
         except models.ObjectDoesNotExist:
-            return Job.objects.create(newsletter=self, status=32)            
+            return self.jobs.create(status=32)            
     
     def is_workflow(self):
         """
@@ -173,7 +173,7 @@ class Newsletter(Base):
                 kw = {'group_object':group}
             else:
                 kw = {}
-            job=Job.objects.create(newsletter=self, status=32, **kw) # 32=readonly
+            job=self.jobs.create(status=32, **kw) # 32=readonly
         self.replace_links(job)
         mail = job.create_mail(person)
         try:
