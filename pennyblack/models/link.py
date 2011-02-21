@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.core.urlresolvers import resolve
 from django.db import models
+from django.template import Context, Template, TemplateSyntaxError
 
 import datetime
 import hashlib
@@ -46,9 +47,15 @@ class Link(models.Model):
         """
         Creates a LinkClick and returns the link target
         """
-        click = LinkClick(link=self, mail=mail)
-        click.save()
-        return self.link_target
+        click = self.clicks.create(mail=mail)
+        return self.get_target(mail)
+    
+    def get_target(self, mail):
+        """
+        gets the link target by evaluating the string using the email content
+        """
+        template = Template(self.link_target)
+        return template.render(Context(mail.get_context()))
 
     def save(self, **kwargs):
         if self.link_hash == u'':
