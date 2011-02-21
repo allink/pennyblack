@@ -16,7 +16,7 @@ import os
 import Image
 import exceptions
 
-HREF_RE = re.compile(r'href\="([^"><]+)"')
+HREF_RE = re.compile(r'href\="((\{\{[^}]+\}\}|[^"><])+)"')
 
 class NewsletterSectionAdminForm(RichTextContentAdminForm):
     def clean(self):
