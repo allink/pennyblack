@@ -6,5 +6,3 @@ from pennyblack.models.mail import Mail
 from pennyblack.models.sender import Sender
 
 __all__ = ('Newsletter','Job', 'Link', 'LinkClick', 'Mail', 'Sender')
-
-

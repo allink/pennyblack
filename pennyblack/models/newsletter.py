@@ -183,8 +183,7 @@ class Newsletter(Base):
         else:
             mail.mark_sent()
             
-
-    
+Newsletter.__module__ = 'pennyblack.models'    
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
