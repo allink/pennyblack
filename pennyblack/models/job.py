@@ -27,8 +27,8 @@ class Job(models.Model):
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
     date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Finished", default=None)
 
-    content_type = models.ForeignKey('contenttypes.ContentType', null=True)
-    object_id = models.PositiveIntegerField(null=True)
+    content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     group_object = generic.GenericForeignKey('content_type', 'object_id')
     collection = models.TextField(blank=True)
     
@@ -150,10 +150,15 @@ class JobAdmin(admin.ModelAdmin):
     fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)
     readonly_fields = ('collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)    
     inlines = (LinkInline, MailInline,)
-    form = JobAdminForm
+    massmail_form = JobAdminForm
     
-    def get_readonly_fields(self, request, obj):
-        if obj.status in settings.JOB_STATUS_CAN_EDIT:
+    def get_form(self, request, obj=None, **kwargs):
+        if obj and obj.status in settings.JOB_STATUS_CAN_EDIT:
+            kwargs['form'] = self.massmail_form
+        return super(JobAdmin, self).get_form(request, obj, **kwargs)
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.status in settings.JOB_STATUS_CAN_EDIT:
             return self.readonly_fields
         else:
             return self.readonly_fields + ('newsletter',)
