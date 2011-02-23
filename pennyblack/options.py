@@ -72,9 +72,10 @@ class JobUnitAdmin(admin.ModelAdmin):
     collection_selection_form_extra_fields = dict()
     
     def create_newsletter(self, request, object_id):
-        info = self.model._meta.app_label, self.model._meta.module_name
         obj = get_object_or_404(self.model, pk=object_id)
         if len(obj.get_newsletter_receiver_collections()) == 1 and len(self.collection_selection_form_extra_fields) == 0:
+            # there is only one collection and no options to select
+            # -> call create_newsletter directly
             job = obj.create_newsletter()
             return HttpResponseRedirect(reverse('admin:pennyblack_job_change', args=(job.id,)))            
         if request.method == 'POST':
@@ -87,6 +88,7 @@ class JobUnitAdmin(admin.ModelAdmin):
         else:
             form = self.collection_select_form(group_object=obj,
                 extra_fields=self.collection_selection_form_extra_fields)
+        info = self.model._meta.app_label, self.model._meta.module_name
         context = {
             'adminform':form,
             'form_url' : reverse('admin:%s_%s_create_newsletter' % info, args=(obj.id,))
