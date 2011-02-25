@@ -170,6 +170,7 @@ class JobAdmin(admin.ModelAdmin):
     def change_view(self, request, object_id, extra_context={}):
         obj = get_object_or_404(self.model, pk=object_id)
         extra_context['can_send']=obj.can_send
+        request._pennyblack_job_obj = obj # add object to request for the mail inline
         return super(JobAdmin, self).change_view(request, object_id, extra_context)
 
     def send_newsletter_view(self,request, object_id):

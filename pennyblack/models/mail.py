@@ -143,3 +143,11 @@ class MailInline(admin.TabularInline):
     max_num = 0
     fields = ('get_email',)
     readonly_fields = ('get_email',)
+    
+    def queryset(self, request):
+        """
+        Don't display Inlines if there are more than 100
+        """
+        if request._pennyblack_job_obj.mails.count() > 100:
+            return super(MailInline,self).queryset(request).filter(pk=0)
+        return super(MailInline,self).queryset(request)
