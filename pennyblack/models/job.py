@@ -2,9 +2,11 @@ from django import forms
 from django.contrib import admin
 from django.conf.urls.defaults import patterns, url
 from django.contrib.contenttypes import generic
+from django.core import mail
 from django.core.context_processors import csrf
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
