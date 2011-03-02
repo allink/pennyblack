@@ -71,6 +71,14 @@ class Mail(models.Model):
             hasattr(self.job.group_object.on_landing, '__call__'):
             self.group_object.on_landing(request)
     
+    def bounce(self):
+        """
+        Is executed if this email is bounced.
+        """
+        self.bounced = True
+        self.save()
+        self.person.bounce_ping()
+    
     def is_valid(self):
         """
         Checks if this Mail is valid by validating the email address.

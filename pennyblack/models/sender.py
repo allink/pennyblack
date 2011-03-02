@@ -69,10 +69,9 @@ class Sender(models.Model):
                     continue
                 for addr in addrs:
                     mailquery = Mail.objects.filter(email=addr).filter(job__date_deliver_finished__gte=oldest_date)
-                    mailquery.update(bounced=True)
                     # ping all newsletter receivers
                     for mail in mailquery:
-                        mail.person.bounce_ping()
+                        mail.bounce()
                 if conn.copy(num,settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
                     conn.store(num, '+FLAGS', '\\Deleted')
             conn.expunge()
