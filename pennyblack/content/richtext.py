@@ -36,7 +36,7 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
         return cleaned_data
     
     class Meta:
-        exclude = ('image_thumb',)
+        exclude = ('image_thumb', 'image_width', 'image_height', 'image_url_replaced')
 
 class TextOnlyNewsletterContent(RichTextContent):
     """
@@ -93,7 +93,12 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
     Like a TextOnlyNewsletterContent but with extra image field
     """
     image_original = models.ForeignKey(MediaFile)
-    image_thumb = models.ImageField(upload_to='newsletter/images', blank=True)
+    image_thumb = models.ImageField(upload_to='newsletter/images', blank=True,
+        width_field='image_width', height_field='image_height')
+    image_width = models.IntegerField(default=0)
+    image_height = models.IntegerField(default=0)
+    image_url = models.CharField(max_length=250 ,blank=True)
+    image_url_replaced = models.CharField(max_length=250, default='')
     position = models.CharField(max_length=10, choices=settings.TEXT_AND_IMAGE_CONTENT_POSITIONS)
     
     baselayout = "content/text_and_image/section.html"
@@ -104,10 +109,10 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         verbose_name_plural = _('text and image contents')
     
     def get_extra_context(self):
-        image_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'center' else settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
-        text_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'center' else (settings.NEWSLETTER_CONTENT_WIDTH - 20 - settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE)
+        text_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'top' else (settings.NEWSLETTER_CONTENT_WIDTH - 20 - settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE)
         return {
-            'image_width': image_width,
+            'image_width': self.image_width,
+            'image_height': self.image_height,
             'text_width': text_width,
         }
     
@@ -119,12 +124,25 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         {%% block title %%}%s{%% endblock %%}
         {%% block text %%}%s{%% endblock %%}
         """ % (self.baselayout, self.title, self.text))
+    
+    def get_image_url(self, mail=None, base_url=None):
+        """
+        Gives the repalced url back, if no mail is present it gives instead
+        the original url.
+        """
+        if not mail or not base_url:
+            return self.image_url
+        return self.image_url_replaced.replace('{{base_url}}',base_url)
+    
+    def replace_links(self, job):
+        # todo: replace image link here
+        super(TextWithImageNewsletterContent, self).replace_links(job)
             
     def save(self, *args, **kwargs):
-        image_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'center' else settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
+        image_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'top' else settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
         im=Image.open(self.image_original.file.path)
         im.thumbnail((image_width, 1000), Image.ANTIALIAS)
-        img_temp = files.temp.NamedTemporaryFile(delete=True)
+        img_temp = files.temp.NamedTemporaryFile()
         im.save(img_temp,'jpeg')
         img_temp.flush()
         self.image_thumb.save(os.path.split(self.image_original.file.name)[1], files.File(img_temp), save=False)
