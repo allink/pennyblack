@@ -1,1 +1,2 @@
 recursive-include pennyblack/templates *.html
+recursive-include pennyblack/ *.json
