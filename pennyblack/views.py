@@ -51,3 +51,13 @@ def view(request, mail_hash):
         return HttpResponseRedirect('/')
     mail.mark_viewed()
     return HttpResponse(mail.get_content(webview=True))
+    
+def unsubscribe(request,mail_hash):
+    try:
+        mail = Mail.objects.get(mail_hash=mail_hash)
+    except ObjectDoesNotExist:
+        return HttpResponseRedirect('/')
+    link = mail.unsubscribe()
+    if link:
+        HttpResponseRedirect(link)
+    return HttpResponseRedirect('/')

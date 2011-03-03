@@ -6,7 +6,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from pennyblack import settings
-from pennyblack.models.link import check_if_redirect_url
+from pennyblack.models.link import check_if_redirect_url, is_link
 
 from feincms.content.richtext.models import RichTextContentAdminForm, RichTextContent
 from feincms.module.medialibrary.models import MediaFile
@@ -135,8 +135,10 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         return self.image_url_replaced.replace('{{base_url}}',base_url)
     
     def replace_links(self, job):
-        # todo: replace image link here
         super(TextWithImageNewsletterContent, self).replace_links(job)
+        if not is_link(self.image_url, self.image_url_replaced):
+            self.image_url_replaced = job.add_link(self.image_url)
+            self.save()
             
     def save(self, *args, **kwargs):
         image_width = settings.NEWSLETTER_CONTENT_WIDTH if self.position == 'top' else settings.TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
