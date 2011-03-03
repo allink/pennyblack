@@ -12,9 +12,6 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
 from pennyblack import settings
-from pennyblack.models.link import LinkInline
-from pennyblack.models.mail import MailInline
-from pennyblack.models.newsletter import Newsletter
 
 import datetime
 
@@ -142,9 +139,13 @@ class Job(models.Model):
         self.save()
 
 class JobAdminForm(forms.ModelForm):
+    from pennyblack.models.newsletter import Newsletter
     newsletter = forms.ModelChoiceField(queryset=Newsletter.objects.massmail())
 
 class JobAdmin(admin.ModelAdmin):
+    from pennyblack.models.link import LinkInline
+    from pennyblack.models.mail import MailInline
+    
     date_hierarchy = 'date_deliver_start'
     actions = None
     list_display = ('newsletter', 'group_object', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')

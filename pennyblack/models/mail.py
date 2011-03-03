@@ -77,7 +77,13 @@ class Mail(models.Model):
         """
         self.bounced = True
         self.save()
-        self.person.bounce_ping()
+        self.person.on_bounce(self)
+        
+    def unsubscribe(self):
+        """
+        Is executed if the unsubscribe link is clicked.
+        """
+        return self.person.unsubscribe()
     
     def is_valid(self):
         """

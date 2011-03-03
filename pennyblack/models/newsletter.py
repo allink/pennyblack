@@ -118,25 +118,16 @@ class Newsletter(Base):
         It also generates the header_url_replaced which is the same but for
         the header url.
         """
+        from pennyblack.models.link import is_link
         if self.is_workflow():
             job = self.get_default_job()
         for cls in self._feincms_content_types:
             for content in cls.objects.filter(parent=self):
                 content.replace_links(job)
                 content.save()
-        # todo: hier coden
-        if self.header_url_replaced != '':
-            # try to find the link and compare it to the header_url but
-            # replace the link if something goes wrong
-            try:
-                link_hash = resolve(self.header_url_replaced[len('{{base_url}}'):])[2]['link_hash']
-                link = Link.objects.get(link_hash=link_hash)
-                if link.link_target == self.header_url:
-                    return
-            except:
-                pass
-        self.header_url_replaced = job.add_link(self.header_url)
-        self.save()
+        if not is_link(self.header_url, self.header_url_replaced):
+            self.header_url_replaced = job.add_link(self.header_url)
+            self.save()
         
     def get_default_job(self):
         """

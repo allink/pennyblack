@@ -6,7 +6,6 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 
 from pennyblack.forms import CollectionSelectForm
-from pennyblack.models.job import Job
 
 import exceptions
 
@@ -19,7 +18,10 @@ class NewsletterReceiverMixin(object):
             return self.email
         raise exceptions.NotImplementedError('Need a get_email implementation.')
     
-    def bounce_ping(self):
+    def on_bounce(self, mail):
+        pass
+        
+    def unsubscribe(self):
         pass
 
 class JobUnitMixin(object):
@@ -30,6 +32,7 @@ class JobUnitMixin(object):
         """
         Creates a newsletter for every NewsletterReceiverMixin
         """
+        from pennyblack.models.job import Job
         if form_data==None:
             collection_name = 'Default'
             queryset = self.get_receiver_queryset()

@@ -10,6 +10,25 @@ import random
 #-----------------------------------------------------------------------------
 # Link
 #-----------------------------------------------------------------------------
+
+def is_link(link_original, link_replaced):
+    """
+    Checks if link_replaced resolves to link_original
+    """
+    from pennyblack.models import Link
+    if link_replaced == '':
+        return False
+    # try to find the link and compare it to the header_url but
+    # replace the link if something goes wrong
+    try:
+        link_hash = resolve(link_replaced[len('{{base_url}}'):])[2]['link_hash']
+        link = Link.objects.get(link_hash=link_hash)
+        if link.link_target == link_original:
+            return True
+    except:
+        pass
+    return False
+
 def check_if_redirect_url(url):
     """
     Checks if the url is a redirect url
