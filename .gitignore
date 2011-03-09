@@ -7,3 +7,4 @@
 /pennyblack.egg-info
 *.sqlite
 /dist
+/build
