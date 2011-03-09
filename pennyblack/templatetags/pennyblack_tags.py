@@ -99,7 +99,20 @@ class NewsletterLinkUrlNode(template.Node):
         
     def render(self, context):
         from pennyblack.models.link import Link
-        return u'ich bin gerendert'
+        if 'mail' not in context:
+            return u'#'
+        mail = context['mail']
+        newsletter = mail.job.newsletter
+        if newsletter.is_workflow():
+            job = newsletter.get_default_job()
+        else:
+            job = mail.job
+        try:
+            link = job.links.get(identifier=self.identifier)
+            return context['base_url'] + reverse('pennyblack.redirect_link', args=(mail.mail_hash, link.link_hash))
+        except job.links.model.DoesNotExist:
+            pass
+        return u'#'
 
 @register.tag
 def link_url(parser, token):
