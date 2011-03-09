@@ -105,6 +105,7 @@ INSTALLED_APPS = (
     'feincms',
     'feincms.module.medialibrary',
     'pennyblack',
+    'pennyblack.module.subscriber',
     'example',
 )
 
