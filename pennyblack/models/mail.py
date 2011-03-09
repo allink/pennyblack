@@ -152,7 +152,7 @@ class Mail(models.Model):
         """
         Gets the header url for this email.
         """
-        return self.job.newsletter.header_url_replaced.replace('{{mail.mail_hash}}',self.mail_hash)
+        return self.job.newsletter.header_url_replaced.replace('{{mail.mail_hash}}',self.mail_hash).replace('{{base_url}}', self.job.newsletter.get_base_url())
 
 class MailInline(admin.TabularInline):
     model = Mail

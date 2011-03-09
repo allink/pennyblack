@@ -128,6 +128,10 @@ class Newsletter(Base):
         if not is_link(self.header_url, self.header_url_replaced):
             self.header_url_replaced = job.add_link(self.header_url)
             self.save()
+        #add extra links form group object
+        for identifier, view in job.group_object.get_extra_links().items():
+            job.add_link(view, identifier=identifier)
+                
         
     def get_default_job(self):
         """

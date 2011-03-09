@@ -108,11 +108,16 @@ class Job(models.Model):
         return self.mails.create(person=receiver)
         
     
-    def add_link(self, link):
+    def add_link(self, link, identifier=''):
         """
         Adds a link and returns a replacement link
         """
-        link = self.links.create(link_target=link)
+        if identifier != '':
+            try:
+                return self.links.get(identifier=identifier)
+            except self.links.model.DoesNotExist:
+                return self.links.create(view=link, identifier=identifier)
+        link = self.links.create(link_target=link, identifier=identifier)
         link.save()
         return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     

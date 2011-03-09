@@ -63,6 +63,18 @@ class JobUnitMixin(object):
         """
         queryset = self.get_receiver_queryset()
         return queryset
+    
+    def get_extra_links(self):
+        """
+        If you need extra urls for your group objects to be traceable with
+        pennyblack return them here.
+        eg.
+        return {
+            'identifier of link':view_function,
+            'unsubscribe':unsubscribe_view,
+        }
+        """
+        return {}
 
 
 class JobUnitAdmin(admin.ModelAdmin):

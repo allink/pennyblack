@@ -1,4 +1,4 @@
-{% load feincms_tags i18n %}
+{% load feincms_tags i18n pennyblack_tags %}
 {% if webview %}
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -29,7 +29,7 @@
         <td align="center" bgcolor="#FFFFFF" height="60">&nbsp;</td>
       </tr>
       <tr>
-        <td align="center"><a href="{{mail.get_header_url}}" target="_blank"><img src="{% if webview %}{{newsletter.header_image.get_absolute_url}}{% else %}{{newsletter.get_base_url}}{% url pennyblack.ping mail.mail_hash, newsletter.header_image %}{% endif %}" border="0" /></a></td>
+        <td align="center">{% header_image alt="Pennyblack" %}</td>
       </tr>
       <tr>
         <td align="center" bgcolor="#FFFFFF" height="26"></td>

@@ -6,6 +6,7 @@ from django.template import Context, Template, TemplateSyntaxError
 import datetime
 import hashlib
 import random
+import pickle
 
 #-----------------------------------------------------------------------------
 # Link
@@ -44,6 +45,7 @@ def check_if_redirect_url(url):
 
 class Link(models.Model):
     job = models.ForeignKey('pennyblack.Job', related_name='links')
+    identifier = models.CharField(max_length=20, default='')
     link_hash = models.CharField(max_length=32, blank=True)
     link_target = models.CharField(verbose_name="Adresse", max_length=500)
     
@@ -54,6 +56,12 @@ class Link(models.Model):
 
     def __unicode__(self):
         return self.link_target
+    
+    def __init__(self, *args, **kwargs):
+        if 'view' in kwargs.keys():
+            kwargs['link_target'] = pickle.dumps(kwargs['view'])
+            del kwargs['view']
+        return super(Link, self).__init__(*args, **kwargs)
     
     def click_count(self):
         """
@@ -73,6 +81,8 @@ class Link(models.Model):
         """
         gets the link target by evaluating the string using the email content
         """
+        if self.identifier != '':
+            return pickle.loads(str(self.link_target))
         template = Template(self.link_target)
         return template.render(Context(mail.get_context()))
 
@@ -93,4 +103,5 @@ class LinkInline(admin.TabularInline):
     model = Link
     max_num = 0
     can_delete = False
-    readonly_fields = ('link_hash', 'click_count',)
+    fields = ('link_target', 'identifier', 'link_hash', 'click_count')
+    readonly_fields = ('identifier', 'link_hash', 'click_count',)

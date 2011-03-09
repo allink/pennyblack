@@ -1,4 +1,5 @@
 from django import template
+from django.core.urlresolvers import reverse
 
 register = template.Library()
 
@@ -56,4 +57,57 @@ def get_newsletterstyle(parser, token):
     key = parser.compile_filter(bits[2])
     return NewsletterGetStyleNode(key, request)
 get_newsletterstyle = register.tag(get_newsletterstyle)
+
+
+class NewsletterHeaderImageNode(template.Node):
+    def __init__(self, extra_args={}):
+        self.extra_args = extra_args
+        
+    def render(self, context):
+        newsletter = context['newsletter']
+        if context['webview']:
+            header_url = ''
+            header_image = newsletter.header_image.get_absolute_url()
+        else:
+            mail = context['mail']
+            header_url = mail.get_header_url()
+            header_image = newsletter.get_base_url() + reverse('pennyblack.ping', kwargs={'mail_hash':mail.mail_hash, 'filename':newsletter.header_image})
+        return """<a href="%s" target="_blank"><img src="%s" border="0" %s/></a>""" % (header_url, header_image, ' '.join(self.extra_args))
+
+@register.tag
+def header_image(parser, token):
+    """
+    Renders the header image with tracking any extra args are given to the img tag
     
+    {% header_image alt="Header" width="283" height="157" align="left" vspace="0" hspace="0" border="0" %}
+    
+    renders
+    
+    <a href="" target="_blank"><img src="link to the image" border="0" alt="Header" width="283" height="157" align="left" vspace="0" hspace="0" border="0"/></a>
+    """
+    bits = list(token.split_contents())
+    extra_args = []
+    for bit in bits:
+        splitted = bit.split('=')
+        if len(splitted) == 2:
+            extra_args.append(bit)
+    return NewsletterHeaderImageNode(extra_args=extra_args)
+
+class NewsletterLinkUrlNode(template.Node):
+    def __init__(self, identifier=None):
+        self.identifier=identifier
+        
+    def render(self, context):
+        from pennyblack.models.link import Link
+        return u'ich bin gerendert'
+
+@register.tag
+def link_url(parser, token):
+    """
+    Renders a link wich is provided by the group object.
+    """
+    bits = list(token.split_contents())
+    if len(bits) != 2:
+        raise template.TemplateSyntaxError("%r expected format is 'link_url url_identifier'" %
+            bits[0])
+    return NewsletterLinkUrlNode(identifier=bits[1])

@@ -6,8 +6,38 @@ from django.template import RequestContext
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.utils.functional import wraps
 
 from pennyblack.models import Newsletter, Link, Mail
+
+import types
+
+def needs_mail(function):
+    """
+    Decorator to get the mail object
+    """
+    @wraps(function)
+    def wrapper(request, mail_hash=None, *args, **kwargs):
+        try:
+            mail = Mail.objects.get(mail_hash=mail_hash)
+        except ObjectDoesNotExist:
+            return HttpResponseRedirect('/')
+        return function(request, mail=mail, *args, **kwargs)
+    return wrapper
+
+def needs_link(function):
+    """
+    Decorator to get the link object
+    """
+    @wraps(function)
+    def wrapper(request, link_hash=None, *args, **kwargs):
+        try:
+            link = Link.objects.get(link_hash=link_hash)
+        except ObjectDoesNotExist:
+            return HttpResponseRedirect('/')
+        return function(request, link=link, *args, **kwargs)
+    return wrapper
+            
 
 @login_required
 def preview(request, newsletter_id):
@@ -21,43 +51,30 @@ def preview(request, newsletter_id):
         }
     return render_to_response(newsletter.template.path, request.content_context, context_instance=RequestContext(request))
     
-
-def redirect_link(request, mail_hash, link_hash):
+@needs_mail
+@needs_link
+def redirect_link(request, mail, link):
     """
     Redirects to the link target and marks this mail as read
     """
-    try:
-        mail = Mail.objects.get(mail_hash=mail_hash)
-        link = Link.objects.get(link_hash=link_hash)
-    except ObjectDoesNotExist:
-        return HttpResponseRedirect('/')
     mail.on_landing(request)
-    return HttpResponseRedirect(link.click(mail))
+    target = link.click(mail)
+    if isinstance(target, types.FunctionType):
+        return HttpResponseRedirect(reverse('pennyblack.proxy', args=(mail.mail_hash, link.link_hash)))
+    return HttpResponseRedirect(target)
     
-
-def ping(request, mail_hash, filename):
-    try:
-        mail = Mail.objects.get(mail_hash=mail_hash)
-    except ObjectDoesNotExist:
-        HttpResponseRedirect('/')
+@needs_mail
+def ping(request, mail, filename):
     mail.mark_viewed()
     return HttpResponseRedirect(mail.job.newsletter.header_image.get_absolute_url())
 
 
-def view(request, mail_hash):
-    try:
-        mail = Mail.objects.get(mail_hash=mail_hash)
-    except ObjectDoesNotExist:
-        return HttpResponseRedirect('/')
+@needs_mail
+def view(request, mail):
     mail.mark_viewed()
     return HttpResponse(mail.get_content(webview=True))
-    
-def unsubscribe(request,mail_hash):
-    try:
-        mail = Mail.objects.get(mail_hash=mail_hash)
-    except ObjectDoesNotExist:
-        return HttpResponseRedirect('/')
-    link = mail.unsubscribe()
-    if link:
-        HttpResponseRedirect(link)
-    return HttpResponseRedirect('/')
+
+@needs_mail
+@needs_link
+def proxy(request, mail, link):
+    return link.get_target(mail)(request, mail.person, mail.job.group_object)
