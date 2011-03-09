@@ -82,7 +82,8 @@ class NewsletterSubscriber(models.Model, NewsletterReceiverMixin):
 
 class NewsletterSubscriberAdmin(admin.ModelAdmin):
     search_fields = ('email',)
-    list_filter = ('groups',)
+    list_filter = ('groups', 'is_active')
+    list_display = ('__unicode__','is_active')
     filter_horizontal = ('groups',)
     
 
