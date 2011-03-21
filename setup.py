@@ -31,7 +31,7 @@ setup(
         'Topic :: Communications :: Email',
     ],
     requires=[
-        'FeinCMS(>=1.1.4)',
+        'FeinCMS(>=1.2.1)',
         'Django(>=1.2.1)',
         'pydns',
         'pyspf',

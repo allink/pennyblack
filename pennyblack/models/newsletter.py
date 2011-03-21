@@ -10,6 +10,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
 from feincms.admin import editor
+from feincms.admin import item_editor
 from feincms.management.checker import check_database_schema
 from feincms.models import Base
 from feincms.utils import copy_model_instance
@@ -184,9 +185,17 @@ signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=Fa
 
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     list_display = ('__unicode__', 'subject', 'newsletter_type')
-    show_on_top = ('subject', 'sender', 'reply_email',)
     raw_id_fields = ('header_image',)
-    fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
+    fieldsets = (
+        (None, {
+            'fields': ['name', 'subject', 'sender', 'reply_email', 'template_key'],
+        }),
+        (_('Other options'), {
+            'classes': ['collapse',],
+            'fields': ('newsletter_type', 'language', 'utm_source','utm_medium', 'header_image', 'header_url', 'site'),
+        }),
+        item_editor.FEINCMS_CONTENT_FIELDSET,
+    )
     exclude = ('header_url_replaced',)
 
     def get_readonly_fields(self, request, obj=None):
