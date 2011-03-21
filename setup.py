@@ -20,7 +20,7 @@ setup(
     ],
     package_data={'pennyblack':'templates/*.html'},
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
         'Framework :: Django',
         'Intended Audience :: Developers',
