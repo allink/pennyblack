@@ -8,9 +8,9 @@ def add_subscriber(email,groups=[], **kwargs):
     """
     if not email_re.match(email):
         return False
-    subscriber = NewsletterSubscriber.objects.get_or_add(email)
+    subscriber = NewsletterSubscriber.objects.get_or_add(email, **kwargs)
     for group_name in groups:
         group = SubscriberGroup.objects.get_or_add(group_name)
         if group not in subscriber.groups.all():
             subscriber.groups.add(group)
-    return True
+    return subscriber
