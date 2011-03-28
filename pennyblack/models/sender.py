@@ -10,7 +10,16 @@ if settings.BOUNCE_DETECTION_ENABLE:
 import imaplib
 import datetime
 import socket
-import spf
+try:
+    import spf
+    ENABLE_SPF = True
+except IOError:
+    # spf fails to load on a system which is offline because of missing resolv.conf
+    ENABLE_SPF = False
+except ImportError:
+    # spf missing
+    ENABLE_SPF = False
+    
 
 #-----------------------------------------------------------------------------
 # Sender
@@ -37,6 +46,8 @@ class Sender(models.Model):
         """
         Check if sender is authorised by sender policy framework
         """
+        if not ENABLE_SPF:
+            return False
         return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
     
     def spf_result(self):
