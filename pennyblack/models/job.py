@@ -173,7 +173,11 @@ class JobAdmin(admin.ModelAdmin):
         
     def statistics_view(self, request, object_id):
         obj = get_object_or_404(self.model, pk=object_id)
-        return render_to_response('admin/pennyblack/job/statistics.html',{'object':obj})
+        return render_to_response('admin/pennyblack/job/statistics.html',{
+            'object':obj,
+            'opts': self.model._meta,
+            'app_label': self.model._meta.app_label,
+        })
     
     def change_view(self, request, object_id, extra_context={}):
         obj = get_object_or_404(self.model, pk=object_id)

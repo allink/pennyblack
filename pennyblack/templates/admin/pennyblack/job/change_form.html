@@ -2,19 +2,10 @@
 {% load i18n %}
 <!-- Object-Tools -->
 {% block object-tools %}
-<style type="text/css" media="screen">
-    #content-main ul.object-tools {
-        float:right;
-        margin:0 0 1em;
-    }
-    .object-tools + form {
-        clear:both;
-    }
-</style>
 <ul class="object-tools">
-    <li><a href="statistics/">{% trans "Statistics" %}</a></li>
+    <li><a href="statistics/">{% trans "statistics"|capfirst %}</a></li>
+    <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
 </ul>
-{{ block.super }}
 {% endblock %}
 
 {% block after_related_objects %}
