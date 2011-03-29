@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-    <h2>{% trans "Mail stats" %}</h2>
+    <h2>{% trans "email statistics" %}</h2>
     <table border="0">
         <tr><th></th><th>{% trans "Count" %}</th><th>{% trans "Percentage" %}</th></tr>
         <tr><th>{% trans "Mails sent" %}</th><td>{{object.count_mails_sent}}</td><td>{{object.percentage_mails_sent}}%</td></tr>
@@ -19,7 +19,7 @@
         <tr><th>{% trans "Mails bounced" %}</th><td>{{object.count_mails_bounced}}</td><td>{{object.percentage_mails_bounced}}%</td></tr>
         <tr><th>{% trans "Total Mails" %}</th><td>{{object.count_mails_total}}</td></tr>
     </table>
-    <h2>{% trans "Link Stats" %}</h2>
+    <h2>{% trans "link statistics" %}</h2>
     <table border="0">
         <tr>
             <th>Target</th>

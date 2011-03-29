@@ -62,28 +62,28 @@ class NewsletterManager(models.Manager):
 class Newsletter(Base):
     """A newsletter with subject and content
     can contain multiple jobs with mails to send"""
-    name = models.CharField(verbose_name="Name", help_text="Wird nur intern verwendet.", max_length=100)
+    name = models.CharField(verbose_name=_("name"), help_text=_("Is only to describe the newsletter."), max_length=100)
     active = models.BooleanField(default=True)
     newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE,
-        verbose_name="Art", help_text="Kann später nicht mehr geändert werden")
-    sender = models.ForeignKey('pennyblack.Sender', verbose_name="Absender")
-    subject = models.CharField(verbose_name="Betreff", max_length=250)
-    reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
-    language = models.CharField(max_length=6, verbose_name="Sprache", choices=settings.LANGUAGES)
-    header_image = models.ForeignKey('medialibrary.MediaFile', verbose_name="Header Image")
+        verbose_name=_("Type"), help_text=_("Can only be changed during creation."))
+    sender = models.ForeignKey('pennyblack.Sender', verbose_name=_("sender"))
+    subject = models.CharField(verbose_name=_("subject"), max_length=250)
+    reply_email = models.EmailField(verbose_name=_("reply-to") ,blank=True)
+    language = models.CharField(max_length=6, verbose_name=_("language"), choices=settings.LANGUAGES)
+    header_image = models.ForeignKey('medialibrary.MediaFile', verbose_name=_("header image"))
     header_url = models.URLField()
     header_url_replaced = models.CharField(max_length=250, default='')
-    site = models.ForeignKey('sites.Site', verbose_name="Seite")    
+    site = models.ForeignKey('sites.Site', verbose_name=_("site"))    
     #ga tracking
-    utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
-    utm_medium = models.SlugField(verbose_name="Utm Medium", default="cpc")
+    utm_source = models.SlugField(verbose_name=_("Utm Source"), default="newsletter")
+    utm_medium = models.SlugField(verbose_name=_("Utm Medium"), default="cpc")
     
     objects = NewsletterManager()
 
     class Meta:
         ordering = ('subject',)
-        verbose_name = "Newsletter"
-        verbose_name_plural = "Newsletters"
+        verbose_name = _("Newsletter")
+        verbose_name_plural = _("Newsletters")
         app_label = 'pennyblack'
             
     def __unicode__(self):

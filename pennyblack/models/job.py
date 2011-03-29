@@ -22,9 +22,9 @@ class Job(models.Model):
     """A bunch of participants wich receive a newsletter"""
     newsletter = models.ForeignKey('pennyblack.Newsletter', related_name="jobs", null=True)
     status = models.IntegerField(choices=settings.JOB_STATUS, default=1)
-    date_created = models.DateTimeField(verbose_name="Created", default=datetime.datetime.now())
-    date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Started", default=None)
-    date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name="Delivering Finished", default=None)
+    date_created = models.DateTimeField(verbose_name=_("created"), default=datetime.datetime.now())
+    date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name=_("started delivering"), default=None)
+    date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name=_("finished delivering"), default=None)
 
     content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
@@ -32,18 +32,18 @@ class Job(models.Model):
     collection = models.TextField(blank=True)
     
     #ga tracking
-    utm_campaign = models.SlugField(verbose_name="Utm Campaign")
+    utm_campaign = models.SlugField(verbose_name=_("utm campaign"))
     
     
     class Meta:
         ordering = ('date_created',)
-        verbose_name = "Newsletter delivery task"
-        verbose_name_plural = "Newsletter delivery tasks"
+        verbose_name = _("newsletter delivery task")
+        verbose_name_plural = _("newsletter delivery tasks")
         app_label = 'pennyblack'
         
         
     def __unicode__(self):
-        return (self.newsletter.subject if self.newsletter is not None else "unasigned Job")
+        return (self.newsletter.subject if self.newsletter is not None else "unasigned delivery task")
     
     def delete(self, *args, **kwargs):
         if self.newsletter.active == False:
@@ -52,11 +52,11 @@ class Job(models.Model):
     
     def count_mails_total(self):
         return self.mails.count()
-    count_mails_total.short_description = '# of mails'
+    count_mails_total.short_description = _('# of mails')
     
     def count_mails_sent(self):
         return self.mails.filter(sent=True).count()
-    count_mails_sent.short_description = '# of mails sent'
+    count_mails_sent.short_description = _('# of mails sent')
 
     @property
     def percentage_mails_sent(self):
@@ -66,7 +66,7 @@ class Job(models.Model):
     
     def count_mails_viewed(self):
         return self.mails.exclude(viewed=None).count()
-    count_mails_viewed.short_description = '# of views'
+    count_mails_viewed.short_description = _('# of views')
 
     @property
     def percentage_mails_viewed(self):
@@ -76,7 +76,7 @@ class Job(models.Model):
     
     def count_mails_bounced(self):
         return self.mails.filter(bounced=True).count()
-    count_mails_bounced.short_description = '# of bounces'
+    count_mails_bounced.short_description = _('# of bounces')
 
     @property
     def percentage_mails_bounced(self):

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.core.mail.utils import DNS_NAME
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 from pennyblack import settings
 
@@ -25,18 +26,18 @@ except ImportError:
 # Sender
 #-----------------------------------------------------------------------------
 class Sender(models.Model):
-    email = models.EmailField(verbose_name="Von E-Mail Adresse")
-    name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
-    imap_username = models.CharField(verbose_name="IMAP Username", max_length=100, blank=True)
-    imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
-    imap_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
-    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
-    imap_ssl = models.BooleanField(verbose_name="IMAP SSL", default=False)
-    get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
+    email = models.EmailField(verbose_name=_("from e-mail address"))
+    name = models.CharField(verbose_name=_("from name"), help_text=_("many e-mail clients show this as from."), max_length=100)
+    imap_username = models.CharField(verbose_name=_("imap username"), max_length=100, blank=True)
+    imap_password = models.CharField(verbose_name=_("imap passwort"), max_length=100, blank=True)
+    imap_server = models.CharField(verbose_name=_("imap server"), max_length=100, blank=True)
+    imap_port = models.IntegerField(verbose_name=_("imap port"), max_length=100, default=143)
+    imap_ssl = models.BooleanField(verbose_name=_("use ssl"), default=False)
+    get_bounce_emails = models.BooleanField(verbose_name=_("get bounce e-mails"), default=False)
     
     class Meta:
-        verbose_name = 'Sender'
-        verbose_name_plural = 'Senders'
+        verbose_name = _('sender')
+        verbose_name_plural = _('senders')
         app_label = 'pennyblack'
     
     def __unicode__(self):

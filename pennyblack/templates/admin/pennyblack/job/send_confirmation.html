@@ -3,9 +3,9 @@
 {% block content %}
     <h2>{% trans "Send Newsletter" %}</h2>
     <table border="0">
-        <tr><th></th><th>{% trans "Count" %}</th><td>{{object.count_mails_total}}</td></tr>
-        <tr><th></th><th>{% trans "From Name" %}</th><td>{{object.newsletter.sender.name}}</td></tr>
-        <tr><th></th><th>{% trans "From EMail" %}</th><td>{{object.newsletter.sender.email}}</td></tr>
+        <tr><th></th><th>{% trans "email count"|capfirst %}</th><td>{{object.count_mails_total}}</td></tr>
+        <tr><th></th><th>{% trans "from name"|capfirst %}</th><td>{{object.newsletter.sender.name}}</td></tr>
+        <tr><th></th><th>{% trans "from email"|capfirst %}</th><td>{{object.newsletter.sender.email}}</td></tr>
         <tr><th></th><th>{% trans "SPF" %}</th><td>{{object.newsletter.sender.check_spf}}</td></tr>
     </table>
     <iframe width="800" height="1024"

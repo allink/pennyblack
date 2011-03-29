@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.core.urlresolvers import resolve
 from django.db import models
 from django.template import Context, Template, TemplateSyntaxError
+from django.utils.translation import ugettext_lazy as _
 
 import datetime
 import hashlib
@@ -46,12 +47,12 @@ def check_if_redirect_url(url):
 class Link(models.Model):
     job = models.ForeignKey('pennyblack.Job', related_name='links')
     identifier = models.CharField(max_length=20, default='')
-    link_hash = models.CharField(max_length=32, blank=True)
-    link_target = models.CharField(verbose_name="Adresse", max_length=500)
+    link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), blank=True)
+    link_target = models.CharField(verbose_name=_("address"), max_length=500)
     
     class Meta:
-        verbose_name = 'Link'
-        verbose_name_plural = 'Links'
+        verbose_name = _('link')
+        verbose_name_plural = _('links')
         app_label = 'pennyblack'
 
     def __unicode__(self):
