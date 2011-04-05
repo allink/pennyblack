@@ -50,8 +50,8 @@ and complete.
 0. Add Pennyblack Models to south migration modules in your `settings.py`:
 
         SOUTH_MIGRATION_MODULES = {
-            'pennyblack': 'checkbus_opening.migrations_pennyblack',
-            'subscriber': 'checkbus_opening.migrations_subscriber',
+            'pennyblack': 'project_name.migrations_pennyblack',
+            'subscriber': 'project_name.migrations_subscriber',
         }
         
 0. Run `schemamigrations` and `migrate`:
