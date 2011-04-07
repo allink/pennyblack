@@ -60,6 +60,12 @@ class RichtextContentTest(unittest.TestCase):
         self.assertEqual(self.job.times, old_times)
         self.assertEqual(self.content.text, last_text)
     
+    def test_dont_replace_link_url_tag_urls(self):
+        link = '<a href="{% link_url my_identifier%}">link</a>'
+        self.content.text = link
+        self.content.replace_links(self.job)
+        self.assertEqual(self.content.text,link)
+    
     def test_quotes_in_url(self):
         self.content.text = '<a href="http://test{{somevariable|with:"quotes"}}">link</a>'
         self.content.replace_links(self.job)
