@@ -66,6 +66,9 @@ class TextOnlyNewsletterContent(RichTextContent):
             link = match.group(1)
             if check_if_redirect_url(link):
                 continue
+            # don't replace links to proxy view
+            if u'link_url' in link:
+                continue
             replacelink = job.add_link(link)
             self.text = ''.join((self.text[:match.start(1)+offset], replacelink, self.text[match.end(1)+offset:]))
             offset += len(replacelink) - len(match.group(1))
