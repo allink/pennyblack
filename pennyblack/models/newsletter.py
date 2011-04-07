@@ -121,18 +121,20 @@ class Newsletter(Base):
         """
         from pennyblack.models.link import is_link
         if self.is_workflow():
-            job = self.get_default_job()
+            default_job = self.get_default_job()
+        else:
+            default_job = job
         for cls in self._feincms_content_types:
             for content in cls.objects.filter(parent=self):
-                content.replace_links(job)
+                content.replace_links(default_job)
                 content.save()
         if not is_link(self.header_url, self.header_url_replaced):
-            self.header_url_replaced = job.add_link(self.header_url)
+            self.header_url_replaced = default_job.add_link(self.header_url)
             self.save()
         #add extra links form group object
         if job.group_object:
             for identifier, view in job.group_object.get_extra_links().items():
-                job.add_link(view, identifier=identifier)
+                default_job.add_link(view, identifier=identifier)
                 
         
     def get_default_job(self):
