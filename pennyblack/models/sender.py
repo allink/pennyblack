@@ -37,7 +37,7 @@ class Sender(models.Model):
         """
         Check if sender is authorised by sender policy framework
         """
-        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdm())
+        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdn())
     
     def spf_result(self):
         return self.check_spf()
