@@ -74,8 +74,8 @@ class Newsletter(Base):
     header_url_replaced = models.CharField(max_length=250, default='')
     site = models.ForeignKey('sites.Site', verbose_name="Seite")    
     #ga tracking
-    utm_source = models.SlugField(verbose_name="Utm Source", default="newsletter")
-    utm_medium = models.SlugField(verbose_name="Utm Medium", default="cpc")
+    utm_source = models.SlugField(verbose_name=_("utm Source"), default="newsletter")
+    utm_medium = models.SlugField(verbose_name=_("utm Medium"), default="cpc")
     
     objects = NewsletterManager()
 
@@ -86,7 +86,7 @@ class Newsletter(Base):
         app_label = 'pennyblack'
             
     def __unicode__(self):
-        return self.name
+        return u'%s %s' % (self.name, self.language)
     
     def is_valid(self):
         """
@@ -186,7 +186,7 @@ Newsletter.__module__ = 'pennyblack.models'
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
-    list_display = ('__unicode__', 'subject', 'newsletter_type')
+    list_display = ('name', 'subject', 'language', 'newsletter_type')
     show_on_top = ('subject', 'sender', 'reply_email',)
     raw_id_fields = ('header_image',)
     fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
