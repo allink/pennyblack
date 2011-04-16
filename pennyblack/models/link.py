@@ -104,5 +104,12 @@ class LinkInline(admin.TabularInline):
     model = Link
     max_num = 0
     can_delete = False
-    fields = ('link_target', 'identifier', 'link_hash', 'click_count')
-    readonly_fields = ('identifier', 'link_hash', 'click_count',)
+    fields = ('link_target', 'link_hash',)
+    readonly_fields = ('link_hash',)
+    
+    def queryset(self, request):
+        """
+        Don't show extra links because pickled views will get damaged on save.
+        """
+        queryset = super(LinkInline, self).queryset(request)
+        return queryset.filter(identifier='')

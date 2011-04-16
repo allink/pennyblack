@@ -2,6 +2,7 @@
 import exceptions
 
 from django.conf.urls.defaults import patterns, url
+from django.core.exceptions import ImproperlyConfigured
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -131,11 +132,9 @@ class Newsletter(Base):
         if not is_link(self.header_url, self.header_url_replaced):
             self.header_url_replaced = default_job.add_link(self.header_url)
             self.save()
-        #add extra links form group object
-        if job.group_object:
-            for identifier, view in job.group_object.get_extra_links().items():
-                default_job.add_link(view, identifier=identifier)
-                
+        if job.group_object and hasattr(job.group_object,'get_extra_links'):
+            from exceptions import DeprecationWarning
+            raise DeprecationWarning("get_extra_links is deprecated and will no longer work")
         
     def get_default_job(self):
         """
@@ -182,6 +181,26 @@ class Newsletter(Base):
             raise
         else:
             mail.mark_sent()
+    
+    _view_links = {}
+    
+    @classmethod
+    def register_view_link(cls, identifier, view):
+        """
+        Register a new view link
+        Newsletter.register_view_link('my_identifier',view_function)
+        """
+        if identifier in cls._view_links.keys():
+            return
+        cls._view_links[identifier] = view
+    
+    @classmethod
+    def add_view_link_to_job(cls, identifier,job):
+        if identifier not in cls._view_links.keys():
+            raise ImproperlyConfigured("no view with identifier '%s' found" % identifier)
+        return job.add_link(cls._view_links[identifier], identifier=identifier)
+        
+        
             
 Newsletter.__module__ = 'pennyblack.models'    
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)

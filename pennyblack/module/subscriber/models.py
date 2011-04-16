@@ -134,17 +134,11 @@ class SubscriberGroup(models.Model, JobUnitMixin):
         Return all group members
         """
         return self.subscribers.active()
-
-    def get_extra_links(self):
-        """
-        Define extra links for unsubscribing
-        """
-        from pennyblack.module.subscriber.views import unsubscribe
-        return {
-            'unsubscribe':unsubscribe,
-        }
-
     
 class SubscriberGroupAdmin(JobUnitAdmin):
     list_display = ('__unicode__', 'get_member_count')
-    
+
+# register view links
+from pennyblack.models import Newsletter
+from pennyblack.module.subscriber.views import unsubscribe
+Newsletter.register_view_link('subscriber.unsubscribe',unsubscribe)
