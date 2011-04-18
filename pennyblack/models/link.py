@@ -46,8 +46,8 @@ def check_if_redirect_url(url):
 
 class Link(models.Model):
     job = models.ForeignKey('pennyblack.Job', related_name='links')
-    identifier = models.CharField(max_length=20, default='')
-    link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), blank=True)
+    identifier = models.CharField(max_length=100, default='')
+    link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), db_index=True, blank=True)
     link_target = models.CharField(verbose_name=_("address"), max_length=500)
     
     class Meta:
