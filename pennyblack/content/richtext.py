@@ -128,15 +128,16 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         {%% block text %%}%s{%% endblock %%}
         """ % (self.baselayout, self.title, self.text))
     
-    def get_image_url(self, mail=None, base_url=None):
+    def get_image_url(self, context=None):
         """
         Gives the repalced url back, if no mail is present it gives instead
         the original url.
         """
-        if self.image_url_replaced == '':
+        if context is None:
             return self.image_url
-        return self.image_url_replaced
-    
+        template = Template(self.image_url_replaced)
+        return template.render(context)
+            
     def replace_links(self, job):
         super(TextWithImageNewsletterContent, self).replace_links(job)
         if not is_link(self.image_url, self.image_url_replaced):

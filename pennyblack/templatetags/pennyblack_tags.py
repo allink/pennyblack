@@ -123,3 +123,16 @@ def link_url(parser, token):
         raise template.TemplateSyntaxError("%r expected format is 'link_url url_identifier'" %
             bits[0])
     return NewsletterLinkUrlNode(identifier=bits[1])
+
+class ContentImageUrlNode(template.Node):
+    def render(self, context):
+        if 'mail' in context:
+            return context['content'].get_image_url(context=context)
+        return context['content'].get_image_url()
+
+@register.tag
+def content_image_url(parser, token):
+    """
+    Renders the link of the given content.
+    """
+    return ContentImageUrlNode()
