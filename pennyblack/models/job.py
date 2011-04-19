@@ -32,7 +32,7 @@ class Job(models.Model):
     collection = models.TextField(blank=True)
     
     #ga tracking
-    utm_campaign = models.SlugField(verbose_name=_("utm campaign"))
+    utm_campaign = models.SlugField(verbose_name=_("utm campaign"), blank=True)
     
     
     class Meta:
@@ -155,7 +155,7 @@ class JobAdmin(admin.ModelAdmin):
     actions = None
     list_display = ('newsletter', 'group_object', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
     list_filter   = ('status', 'newsletter',)
-    fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)
+    fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')
     readonly_fields = ('collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)    
     inlines = (LinkInline, MailInline,)
     massmail_form = JobAdminForm

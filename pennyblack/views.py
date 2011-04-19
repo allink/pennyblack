@@ -61,6 +61,13 @@ def redirect_link(request, mail, link):
     target = link.click(mail)
     if isinstance(target, types.FunctionType):
         return HttpResponseRedirect(reverse('pennyblack.proxy', args=(mail.mail_hash, link.link_hash)))
+    ga_tracking = "utm_source=%s&utm_medium=%s&utm_campaign=%s" % (
+        mail.job.newsletter.utm_source, mail.job.newsletter.utm_medium,
+        mail.job.utm_campaign)
+    if target.find('?') > 0:
+        target = '%s&%s' % (target, ga_tracking)
+    else:
+        target = '%s?%s' % (target, ga_tracking)
     return HttpResponseRedirect(target)
     
 @needs_mail
