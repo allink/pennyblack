@@ -133,9 +133,9 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         Gives the repalced url back, if no mail is present it gives instead
         the original url.
         """
-        if not mail or not base_url:
+        if self.image_url_replaced == '':
             return self.image_url
-        return self.image_url_replaced.replace('{{base_url}}',base_url)
+        return self.image_url_replaced
     
     def replace_links(self, job):
         super(TextWithImageNewsletterContent, self).replace_links(job)
