@@ -37,6 +37,10 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
     
     class Meta:
         exclude = ('image_thumb', 'image_width', 'image_height', 'image_url_replaced')
+    
+    def __init__(self, *args, **kwargs):
+        super(NewsletterSectionAdminForm, self).__init__(*args, **kwargs)
+        self.fields.keyOrder = ['title', 'text']
 
 class TextOnlyNewsletterContent(RichTextContent):
     """
