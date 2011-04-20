@@ -59,6 +59,7 @@ class Sender(models.Model):
         """
         Checks the inbox of this sender and prcesses the bounced emails
         """
+        from pennyblack.models import Mail
         if not settings.BOUNCE_DETECTION_ENABLE:
             return
         oldest_date = datetime.datetime.now()-datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
@@ -67,14 +68,16 @@ class Sender(models.Model):
                 ssl_class = imaplib.IMAP4_SSL
             else:
                 ssl_class = imaplib.IMAP4
-            conn = ssl_class(self.imap_server, self.imap_port)
+            conn = ssl_class(self.imap_server, int(self.imap_port))
             conn.login(self.imap_username, self.imap_password)
             if conn.select(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] != 'OK':
                 conn.create(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)
-            conn.select()
+            conn.select('INBOX')
             typ, data = conn.search(None, 'ALL')
             for num in data[0].split():
                 typ, data = conn.fetch(num, '(RFC822)')
+                if not data:
+                    continue
                 addrs = ScanText(data[0][1])
                 addrs = addrs.split(';')
                 if len(addrs) == 1 and len(addrs[0]) == 0:
@@ -85,7 +88,7 @@ class Sender(models.Model):
                     for mail in mailquery:
                         mail.bounce()
                 if conn.copy(num,settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
-                    conn.store(num, '+FLAGS', '\\Deleted')
+                    conn.store(num, '+FLAGS', r'\Deleted')
             conn.expunge()
             conn.close()
             conn.logout()
