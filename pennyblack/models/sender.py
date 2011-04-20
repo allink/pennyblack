@@ -76,7 +76,7 @@ class Sender(models.Model):
             typ, data = conn.search(None, 'ALL')
             for num in data[0].split():
                 typ, data = conn.fetch(num, '(RFC822)')
-                if not data:
+                if not data or not data[0]:
                     continue
                 addrs = ScanText(data[0][1])
                 addrs = addrs.split(';')
