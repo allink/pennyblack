@@ -35,7 +35,7 @@ class NewsletterSubscriber(models.Model, NewsletterReceiverMixin):
     A generic newsletter subscriber
     """
     # from pennyblack.models.mail import Mail
-    email = models.EmailField(verbose_name="email address")
+    email = models.EmailField(verbose_name="email address", unique=True)
     groups = models.ManyToManyField('subscriber.SubscriberGroup',
         verbose_name="Groups", related_name='subscribers')
     date_subscribed = models.DateTimeField(verbose_name="Subscribe Date",
