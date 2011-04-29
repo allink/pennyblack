@@ -40,7 +40,7 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
     
     def __init__(self, *args, **kwargs):
         super(NewsletterSectionAdminForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = ['title', 'text']
+        self.fields.insert(0, 'title', self.fields.pop('title'))
 
 class TextOnlyNewsletterContent(RichTextContent):
     """
