@@ -93,6 +93,8 @@ class JobUnitAdmin(admin.ModelAdmin):
                 extra_fields=self.collection_selection_form_extra_fields)
         info = self.model._meta.app_label, self.model._meta.module_name
         context = {
+            'opts':self.model._meta,
+            'app_label':self.model._meta.app_label,
             'adminform':form,
             'form_url' : reverse('admin:%s_%s_create_newsletter' % info, args=(obj.id,))
         }

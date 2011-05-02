@@ -1,5 +1,15 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+     <a href="../../../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="../../../">{{ app_label|capfirst|escape }}</a> &rsaquo;
+     <a href="../../">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+     <a href="../">{{ object|truncatewords:"18" }}</a> &rsaquo;
+     {% trans "select collection"|capfirst %}
+</div>
+{% endblock %}
+
 {% block content %}
 <h1>Select Receiver Collection</h1>
 <form action="{{ form_url }}" method="post" id="{{ opts.module_name }}_form">{% csrf_token %}

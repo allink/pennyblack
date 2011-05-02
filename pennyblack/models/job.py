@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.util import unquote
 from django.conf.urls.defaults import patterns, url
 from django.contrib.contenttypes import generic
 from django.core import mail
@@ -7,7 +8,7 @@ from django.core.context_processors import csrf
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import render_to_response
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
@@ -36,7 +37,7 @@ class Job(models.Model):
     
     
     class Meta:
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
         verbose_name = _("newsletter delivery task")
         verbose_name_plural = _("newsletter delivery tasks")
         app_label = 'pennyblack'
@@ -170,23 +171,15 @@ class JobAdmin(admin.ModelAdmin):
             return self.readonly_fields
         else:
             return self.readonly_fields + ('newsletter',)
-        
-    def statistics_view(self, request, object_id):
-        obj = get_object_or_404(self.model, pk=object_id)
-        return render_to_response('admin/pennyblack/job/statistics.html',{
-            'object':obj,
-            'opts': self.model._meta,
-            'app_label': self.model._meta.app_label,
-        })
-    
+            
     def change_view(self, request, object_id, extra_context={}):
-        obj = get_object_or_404(self.model, pk=object_id)
+        obj = self.get_object(request, unquote(object_id))
         extra_context['can_send']=obj.can_send()
         request._pennyblack_job_obj = obj # add object to request for the mail inline
         return super(JobAdmin, self).change_view(request, object_id, extra_context)
 
     def send_newsletter_view(self,request, object_id):
-        obj = get_object_or_404(self.model, pk=object_id)
+        obj = self.get_object(request, unquote(object_id))
         if request.method == 'POST' and request.POST.has_key("_send"):
             obj.status = 11
             obj.save()
@@ -198,7 +191,11 @@ class JobAdmin(admin.ModelAdmin):
         Determines the HttpResponse for the change_view stage.
         """
         if request.POST.has_key("_send_prepare"):
-            context = {'object':obj}
+            context = {
+                'object':obj,
+                'opts':self.model._meta,
+                'app_label':self.model._meta.app_label,
+            }
             context.update(csrf(request))
             return render_to_response(
                 'admin/pennyblack/job/send_confirmation.html', context)
@@ -208,7 +205,59 @@ class JobAdmin(admin.ModelAdmin):
         urls = super(JobAdmin, self).get_urls()
         info = self.model._meta.app_label, self.model._meta.module_name
         my_urls = patterns('',
-            url(r'^(?P<object_id>\d+)/statistics/$', self.admin_site.admin_view(self.statistics_view), name='%s_%s_statistics' % info),
             url(r'^(?P<object_id>\d+)/send/$', self.admin_site.admin_view(self.send_newsletter_view), name=('%s_%s_send' % info)),
         )
         return my_urls + urls
+    
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
+
+#-----------------------------------------------------------------------------
+# Job
+#-----------------------------------------------------------------------------
+class JobStatistic(Job):
+    class Meta:
+        proxy = True
+        verbose_name = _("statistic")
+        verbose_name_plural = _("statistics")
+        app_label = 'pennyblack'
+        
+class JobStatisticAdmin(admin.ModelAdmin):
+    date_hierarchy = 'date_deliver_start'
+    actions = None
+    list_display = ('newsletter', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
+    # list_filter   = ('status', 'newsletter',)
+    fields = ('newsletter', 'collection', 'group_object', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')
+    readonly_fields = ('newsletter', 'collection', 'group_object', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')    
+
+    def queryset(self, request):
+        return self.model.objects.exclude(status=1)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_graph_data(self,obj):
+        date_start = obj.date_deliver_start.replace(minute=0,second=0,microsecond=0)
+        opened_serie = []
+        for i in range(7200):
+            t = date_start + datetime.timedelta(hours=i)
+            count_opened = obj.mails.exclude(viewed=None).filter(viewed__lt=t).count()
+            opened_serie.append('[%s000,%s]' % (t.strftime('%s'),count_opened))
+            if t > datetime.datetime.now():
+                break
+        return {
+            'opened_serie': ','.join(opened_serie),
+        }
+         
+    def change_view(self, request, object_id, extra_context={}):
+        obj = self.get_object(request, unquote(object_id))
+        graph_data = self.get_graph_data(obj)
+        extra_context.update(graph_data)
+        return super(JobStatisticAdmin, self).change_view(request, object_id, extra_context)
