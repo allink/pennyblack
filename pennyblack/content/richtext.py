@@ -153,7 +153,7 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         im=Image.open(self.image_original.file.path)
         im.thumbnail((image_width, 1000), Image.ANTIALIAS)
         img_temp = files.temp.NamedTemporaryFile()
-        im.save(img_temp,'jpeg')
+        im.save(img_temp,'jpeg', quality=settings.JPEG_QUALITY, optimize=True)
         img_temp.flush()
         self.image_thumb.save(os.path.split(self.image_original.file.name)[1], files.File(img_temp), save=False)
         super(TextWithImageNewsletterContent, self).save(*args, **kwargs)
