@@ -99,8 +99,12 @@ class Job(models.Model):
         """
         Create mails for every NewsletterReceiverMixin in queryset.
         """
-        for receiver in queryset:
-            self.create_mail(receiver)
+        if hasattr(queryset, 'iterator') and callable(queryset.iterator):
+            for receiver in queryset.iterator():
+                self.create_mail(receiver)
+        else:
+            for receiver in queryset:
+                self.create_mail(receiver)
             
     def create_mail(self, receiver):
         """
@@ -132,7 +136,7 @@ class Job(models.Model):
             translation.activate(self.newsletter.language)
             connection = mail.get_connection()
             connection.open()
-            for newsletter_mail in self.mails.filter(sent=False):
+            for newsletter_mail in self.mails.filter(sent=False).iterator():
                 connection.send_messages([newsletter_mail.get_message()])
                 newsletter_mail.mark_sent()
             connection.close()
