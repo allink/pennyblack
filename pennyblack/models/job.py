@@ -63,7 +63,7 @@ class Job(models.Model):
     def percentage_mails_sent(self):
         if self.count_mails_total() == 0:
             return 0
-        return round(float(self.count_mails_sent())/float(self.count_mails_total()) * 100)
+        return round(float(self.count_mails_sent())/float(self.count_mails_total()) * 100, 1)
     
     def count_mails_viewed(self):
         return self.mails.exclude(viewed=None).count()
@@ -71,9 +71,10 @@ class Job(models.Model):
 
     @property
     def percentage_mails_viewed(self):
-        if self.count_mails_total() == 0:
+        total = float(self.count_mails_total() - self.count_mails_bounced())
+        if total == 0:
             return 0
-        return round(float(self.count_mails_viewed())/float(self.count_mails_total()) * 100)
+        return round(float(self.count_mails_viewed())/total * 100, 1)
     
     def count_mails_bounced(self):
         return self.mails.filter(bounced=True).count()
@@ -83,7 +84,7 @@ class Job(models.Model):
     def percentage_mails_bounced(self):
         if self.count_mails_total() == 0:
             return 0
-        return round(float(self.count_mails_bounced())/float(self.count_mails_total()) * 100)
+        return round(float(self.count_mails_bounced())/float(self.count_mails_total()) * 100, 1)
 
     def can_send(self):
         if not self.status in settings.JOB_STATUS_CAN_SEND:
