@@ -26,6 +26,9 @@ except ImportError:
 # Sender
 #-----------------------------------------------------------------------------
 class Sender(models.Model):
+    """
+    A sender for the from and reply to fields of the newsletter.
+    """
     email = models.EmailField(verbose_name=_("from e-mail address"))
     name = models.CharField(verbose_name=_("from name"), help_text=_("many e-mail clients show this as from."), max_length=100)
     imap_username = models.CharField(verbose_name=_("imap username"), max_length=100, blank=True)

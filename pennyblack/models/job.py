@@ -47,6 +47,9 @@ class Job(models.Model):
         return (self.newsletter.subject if self.newsletter is not None else "unasigned delivery task")
     
     def delete(self, *args, **kwargs):
+        """
+        If the job refers to a inactive Newsletter delete it.
+        """
         if self.newsletter.active == False:
             self.newsletter.delete()
         super(Job, self).delete(*args, **kwargs)
@@ -87,6 +90,9 @@ class Job(models.Model):
         return round(float(self.count_mails_bounced())/float(self.count_mails_total()) * 100, 1)
 
     def can_send(self):
+        """
+        Is used to determine if a send button should be displayed.
+        """
         if not self.status in settings.JOB_STATUS_CAN_SEND:
             return False
         return self.is_valid()
@@ -110,6 +116,7 @@ class Job(models.Model):
     def create_mail(self, receiver):
         """
         Creates a single mail. This is also used in workflow mail send process.
+        receiver has to implement all the methods from NewsletterReceiverMixin
         """
         return self.mails.create(person=receiver)
         
@@ -128,6 +135,9 @@ class Job(models.Model):
         return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     
     def send(self):
+        """
+        Sends every pending e-mail in the job.
+        """
         self.newsletter = self.newsletter.create_snapshot()
         self.newsletter.replace_links(self)
         self.status = 21

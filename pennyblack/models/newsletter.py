@@ -61,8 +61,10 @@ class NewsletterManager(models.Manager):
             return None
 
 class Newsletter(Base):
-    """A newsletter with subject and content
-    can contain multiple jobs with mails to send"""
+    """
+    A newsletter with subject and content
+    can contain multiple jobs with mails to send
+    """
     name = models.CharField(verbose_name=_("name"), help_text=_("Is only to describe the newsletter."), max_length=100)
     active = models.BooleanField(default=True)
     newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE,
