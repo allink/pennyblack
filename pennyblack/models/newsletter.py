@@ -138,6 +138,15 @@ class Newsletter(Base):
             from exceptions import DeprecationWarning
             raise DeprecationWarning("get_extra_links is deprecated and will no longer work")
         
+    def prepare_to_send(self):
+        """
+        Last hook before the newsletter is sent
+        """
+        for cls in self._feincms_content_types:
+            for content in cls.objects.filter(parent=self):
+                if hasattr(content, 'prepare_to_send'):
+                    content.prepare_to_send()
+    
     def get_default_job(self):
         """
         Tries to get the default job. If no default job exists it creates one.
@@ -175,6 +184,7 @@ class Newsletter(Base):
                 kw = {}
             job=self.jobs.create(status=32, **kw) # 32=readonly
         self.replace_links(job)
+        self.prepare_to_send()
         mail = job.create_mail(person)
         try:
             message = mail.get_message()

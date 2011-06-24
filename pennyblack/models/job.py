@@ -140,6 +140,7 @@ class Job(models.Model):
         """
         self.newsletter = self.newsletter.create_snapshot()
         self.newsletter.replace_links(self)
+        self.newsletter.prepare_to_send()
         self.status = 21
         self.date_deliver_start = datetime.datetime.now()
         self.save()

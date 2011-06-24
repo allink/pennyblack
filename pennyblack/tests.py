@@ -70,3 +70,13 @@ class RichtextContentTest(unittest.TestCase):
         self.content.text = '<a href="http://test{{somevariable|with:"quotes"}}">link</a>'
         self.content.replace_links(self.job)
         self.assertEqual(self.content.text,'<a href="{{base_url}}%s">link</a>' % self.link)
+    
+    def test_link_style(self):
+        self.content.text = '<a >link</a>'
+        self.content.prepare_to_send()
+        self.assertEqual(self.content.text,'<a {% get_newsletterstyle request text_and_image_title %}>link</a>')
+
+    def test_multiple_link_styles(self):
+        self.content.text = '<a >link</a><a >link</a>'
+        self.content.prepare_to_send()
+        self.assertEqual(self.content.text,'<a {% get_newsletterstyle request text_and_image_title %}>link</a><a {% get_newsletterstyle request text_and_image_title %}>link</a>')
