@@ -9,16 +9,19 @@ setup(
     author = 'Marc Egli',
     author_email = 'egli@allink.ch',
     url = 'http://github.com/allink/pennyblack/',
+    license='BSD License',
+    platforms=['OS Independent'],
     packages=[
         'pennyblack',
         'pennyblack.content',
         'pennyblack.management',
         'pennyblack.management.commands',
         'pennyblack.models',
+        'pennyblack.module',
         'pennyblack.module.subscriber',
         'pennyblack.templatetags',
     ],
-    package_data={'pennyblack':'templates/*.html'},
+    # package_data={'pennyblack':'templates/*.html'},
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
@@ -37,5 +40,5 @@ setup(
         'pyspf',
         'pil',
     ],
-    
+    include_package_data=True,    
 )
