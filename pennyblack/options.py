@@ -63,18 +63,6 @@ class JobUnitMixin(object):
         """
         queryset = self.get_receiver_queryset()
         return queryset
-    
-    def get_extra_links(self):
-        """
-        If you need extra urls for your group objects to be traceable with
-        pennyblack return them here.
-        eg.
-        return {
-            'identifier of link':view_function,
-            'unsubscribe':unsubscribe_view,
-        }
-        """
-        return {}
 
 
 class JobUnitAdmin(admin.ModelAdmin):
@@ -105,6 +93,8 @@ class JobUnitAdmin(admin.ModelAdmin):
                 extra_fields=self.collection_selection_form_extra_fields)
         info = self.model._meta.app_label, self.model._meta.module_name
         context = {
+            'opts':self.model._meta,
+            'app_label':self.model._meta.app_label,
             'adminform':form,
             'form_url' : reverse('admin:%s_%s_create_newsletter' % info, args=(obj.id,))
         }

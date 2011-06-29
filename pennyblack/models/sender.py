@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.core.mail.utils import DNS_NAME
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 from pennyblack import settings
 
@@ -10,24 +11,36 @@ if settings.BOUNCE_DETECTION_ENABLE:
 import imaplib
 import datetime
 import socket
-import spf
+try:
+    import spf
+    ENABLE_SPF = True
+except IOError:
+    # spf fails to load on a system which is offline because of missing resolv.conf
+    ENABLE_SPF = False
+except ImportError:
+    # spf missing
+    ENABLE_SPF = False
+    
 
 #-----------------------------------------------------------------------------
 # Sender
 #-----------------------------------------------------------------------------
 class Sender(models.Model):
-    email = models.EmailField(verbose_name="Von E-Mail Adresse")
-    name = models.CharField(verbose_name="Von Name", help_text="Wird in vielen E-Mail Clients als Von angezeit.", max_length=100)
-    imap_username = models.CharField(verbose_name="IMAP Username", max_length=100, blank=True)
-    imap_password = models.CharField(verbose_name="IMAP Passwort", max_length=100, blank=True)
-    imap_server = models.CharField(verbose_name="IMAP Server", max_length=100, blank=True)
-    imap_port = models.IntegerField(verbose_name="IMAP Port", max_length=100, default=143)
-    imap_ssl = models.BooleanField(verbose_name="IMAP SSL", default=False)
-    get_bounce_emails = models.BooleanField(verbose_name="Get bounce emails", default=False)
+    """
+    A sender for the from and reply to fields of the newsletter.
+    """
+    email = models.EmailField(verbose_name=_("from e-mail address"))
+    name = models.CharField(verbose_name=_("from name"), help_text=_("many e-mail clients show this as from."), max_length=100)
+    imap_username = models.CharField(verbose_name=_("imap username"), max_length=100, blank=True)
+    imap_password = models.CharField(verbose_name=_("imap passwort"), max_length=100, blank=True)
+    imap_server = models.CharField(verbose_name=_("imap server"), max_length=100, blank=True)
+    imap_port = models.IntegerField(verbose_name=_("imap port"), max_length=100, default=143)
+    imap_ssl = models.BooleanField(verbose_name=_("use ssl"), default=False)
+    get_bounce_emails = models.BooleanField(verbose_name=_("get bounce e-mails"), default=False)
     
     class Meta:
-        verbose_name = 'Sender'
-        verbose_name_plural = 'Senders'
+        verbose_name = _('sender')
+        verbose_name_plural = _('senders')
         app_label = 'pennyblack'
     
     def __unicode__(self):
@@ -37,6 +50,8 @@ class Sender(models.Model):
         """
         Check if sender is authorised by sender policy framework
         """
+        if not ENABLE_SPF:
+            return False
         return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdn())
     
     def spf_result(self):
@@ -47,6 +62,7 @@ class Sender(models.Model):
         """
         Checks the inbox of this sender and prcesses the bounced emails
         """
+        from pennyblack.models import Mail
         if not settings.BOUNCE_DETECTION_ENABLE:
             return
         oldest_date = datetime.datetime.now()-datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
@@ -55,14 +71,16 @@ class Sender(models.Model):
                 ssl_class = imaplib.IMAP4_SSL
             else:
                 ssl_class = imaplib.IMAP4
-            conn = ssl_class(self.imap_server, self.imap_port)
+            conn = ssl_class(self.imap_server, int(self.imap_port))
             conn.login(self.imap_username, self.imap_password)
             if conn.select(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] != 'OK':
                 conn.create(settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)
-            conn.select()
+            conn.select('INBOX')
             typ, data = conn.search(None, 'ALL')
             for num in data[0].split():
                 typ, data = conn.fetch(num, '(RFC822)')
+                if not data or not data[0]:
+                    continue
                 addrs = ScanText(data[0][1])
                 addrs = addrs.split(';')
                 if len(addrs) == 1 and len(addrs[0]) == 0:
@@ -73,7 +91,7 @@ class Sender(models.Model):
                     for mail in mailquery:
                         mail.bounce()
                 if conn.copy(num,settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
-                    conn.store(num, '+FLAGS', '\\Deleted')
+                    conn.store(num, '+FLAGS', r'\Deleted')
             conn.expunge()
             conn.close()
             conn.logout()

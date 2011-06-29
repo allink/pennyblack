@@ -35,7 +35,7 @@ class NewsletterSubscriber(models.Model, NewsletterReceiverMixin):
     A generic newsletter subscriber
     """
     # from pennyblack.models.mail import Mail
-    email = models.EmailField(verbose_name="Email address", unique=True)
+    email = models.EmailField(verbose_name="email address", unique=True)
     groups = models.ManyToManyField('subscriber.SubscriberGroup',
         verbose_name="Groups", related_name='subscribers')
     date_subscribed = models.DateTimeField(verbose_name="Subscribe Date",
@@ -134,17 +134,11 @@ class SubscriberGroup(models.Model, JobUnitMixin):
         Return all group members
         """
         return self.subscribers.active()
-
-    def get_extra_links(self):
-        """
-        Define extra links for unsubscribing
-        """
-        from pennyblack.module.subscriber.views import unsubscribe
-        return {
-            'unsubscribe':unsubscribe,
-        }
-
     
 class SubscriberGroupAdmin(JobUnitAdmin):
     list_display = ('__unicode__', 'get_member_count')
-    
+
+# register view links
+from pennyblack.models import Newsletter
+from pennyblack.module.subscriber.views import unsubscribe
+Newsletter.register_view_link('subscriber.unsubscribe',unsubscribe)

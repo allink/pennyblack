@@ -1,0 +1,287 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-04-15 08:50+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: content/richtext.py:57
+msgid "text only content"
+msgstr ""
+
+#: content/richtext.py:58
+msgid "text only contents"
+msgstr ""
+
+#: content/richtext.py:111
+msgid "text and image content"
+msgstr ""
+
+#: content/richtext.py:112
+msgid "text and image contents"
+msgstr ""
+
+#: models/job.py:25
+msgid "created"
+msgstr ""
+
+#: models/job.py:26
+msgid "started delivering"
+msgstr ""
+
+#: models/job.py:27
+msgid "finished delivering"
+msgstr ""
+
+#: models/job.py:35
+msgid "utm campaign"
+msgstr ""
+
+#: models/job.py:40
+msgid "newsletter delivery task"
+msgstr ""
+
+#: models/job.py:41
+msgid "newsletter delivery tasks"
+msgstr ""
+
+#: models/job.py:55
+msgid "# of mails"
+msgstr ""
+
+#: models/job.py:59
+msgid "# of mails sent"
+msgstr ""
+
+#: models/job.py:69
+msgid "# of views"
+msgstr ""
+
+#: models/job.py:79
+msgid "# of bounces"
+msgstr ""
+
+#: models/job.py:193
+msgid "Newsletter has been marked for delivery."
+msgstr ""
+
+#: models/link.py:50
+msgid "link hash"
+msgstr ""
+
+#: models/link.py:51
+msgid "address"
+msgstr ""
+
+#: models/link.py:54
+msgid "link"
+msgstr ""
+
+#: models/link.py:55
+msgid "links"
+msgstr ""
+
+#: models/newsletter.py:66
+msgid "name"
+msgstr ""
+
+#: models/newsletter.py:66
+msgid "Is only to describe the newsletter."
+msgstr ""
+
+#: models/newsletter.py:69
+msgid "Type"
+msgstr ""
+
+#: models/newsletter.py:69
+msgid "Can only be changed during creation."
+msgstr ""
+
+#: models/newsletter.py:70 models/sender.py:39
+msgid "sender"
+msgstr ""
+
+#: models/newsletter.py:71
+#: templates/admin/pennyblack/job/send_confirmation.html:9
+msgid "subject"
+msgstr ""
+
+#: models/newsletter.py:72
+msgid "reply-to"
+msgstr ""
+
+#: models/newsletter.py:73
+msgid "language"
+msgstr ""
+
+#: models/newsletter.py:74
+msgid "header image"
+msgstr ""
+
+#: models/newsletter.py:77
+msgid "site"
+msgstr ""
+
+#: models/newsletter.py:79
+msgid "utm Source"
+msgstr ""
+
+#: models/newsletter.py:80
+msgid "utm Medium"
+msgstr ""
+
+#: models/newsletter.py:86
+msgid "Newsletter"
+msgstr ""
+
+#: models/newsletter.py:87
+msgid "Newsletters"
+msgstr ""
+
+#: models/newsletter.py:217
+msgid "Other options"
+msgstr ""
+
+#: models/sender.py:29
+msgid "from e-mail address"
+msgstr ""
+
+#: models/sender.py:30 templates/admin/pennyblack/job/send_confirmation.html:7
+msgid "from name"
+msgstr ""
+
+#: models/sender.py:30
+msgid "many e-mail clients show this as from."
+msgstr ""
+
+#: models/sender.py:31
+msgid "imap username"
+msgstr ""
+
+#: models/sender.py:32
+msgid "imap passwort"
+msgstr ""
+
+#: models/sender.py:33
+msgid "imap server"
+msgstr ""
+
+#: models/sender.py:34
+msgid "imap port"
+msgstr ""
+
+#: models/sender.py:35
+msgid "use ssl"
+msgstr ""
+
+#: models/sender.py:36
+msgid "get bounce e-mails"
+msgstr ""
+
+#: models/sender.py:40
+msgid "senders"
+msgstr ""
+
+#: templates/admin/feincms/pennyblack/newsletter/item_editor.html:7
+msgid "preview"
+msgstr ""
+
+#: templates/admin/feincms/pennyblack/newsletter/item_editor.html:8
+#: templates/admin/pennyblack/job/change_form.html:7
+#: templates/admin/pennyblack/jobunit/change_form.html:5
+msgid "History"
+msgstr ""
+
+#: templates/admin/pennyblack/job/change_form.html:6
+#: templates/admin/pennyblack/job/statistics.html:9
+msgid "statistics"
+msgstr ""
+
+#: templates/admin/pennyblack/job/send_confirmation.html:4
+msgid "Send Newsletter"
+msgstr ""
+
+#: templates/admin/pennyblack/job/send_confirmation.html:6
+msgid "email count"
+msgstr ""
+
+#: templates/admin/pennyblack/job/send_confirmation.html:8
+msgid "from email"
+msgstr ""
+
+#: templates/admin/pennyblack/job/send_confirmation.html:10
+msgid "SPF result"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:5
+msgid "Home"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:14
+msgid "email statistics"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:16
+msgid "Count"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:16
+msgid "Percentage"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:17
+msgid "Mails sent"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:18
+msgid "Mails opened"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:19
+msgid "Mails bounced"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:20
+msgid "Total Mails"
+msgstr ""
+
+#: templates/admin/pennyblack/job/statistics.html:22
+msgid "link statistics"
+msgstr ""
+
+#: templates/admin/pennyblack/jobunit/change_form.html:6
+msgid "Newsletter Erstellen"
+msgstr ""
+
+#: templates/admin/pennyblack/jobunit/change_form.html:7
+msgid "View on site"
+msgstr ""
+
+#: templates/admin/pennyblack/jobunit/select_receiver_collection.html:9
+msgid "Please correct the error below."
+msgid_plural "Please correct the errors below."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/pennyblack/jobunit/select_receiver_collection.html:36
+msgid "Save"
+msgstr ""
+
+#: templates/pennyblack/base_newsletter.html:23
+msgid "To view this email as a web page, click"
+msgstr ""
+
+#: templates/pennyblack/base_newsletter.html:23
+msgid "here"
+msgstr ""

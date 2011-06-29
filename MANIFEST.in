@@ -1,2 +1,5 @@
 recursive-include pennyblack/templates *.html
 recursive-include pennyblack/ *.json
+recursive-include pennyblack/locale *.po
+recursive-include pennyblack/locale *.mo
+recursive-include pennyblack/static *.js

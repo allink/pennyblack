@@ -31,8 +31,8 @@ class Mail(models.Model):
     email = models.EmailField() # the address is stored when the mail is sent
     
     class Meta:
-        verbose_name = 'Mail'
-        verbose_name_plural = 'Mails'
+        verbose_name = 'mail'
+        verbose_name_plural = 'mails'
         app_label = 'pennyblack'
     
     def __unicode__(self):

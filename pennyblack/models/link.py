@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.core.urlresolvers import resolve
 from django.db import models
 from django.template import Context, Template, TemplateSyntaxError
+from django.utils.translation import ugettext_lazy as _
 
 import datetime
 import hashlib
@@ -45,13 +46,13 @@ def check_if_redirect_url(url):
 
 class Link(models.Model):
     job = models.ForeignKey('pennyblack.Job', related_name='links')
-    identifier = models.CharField(max_length=20, default='')
-    link_hash = models.CharField(max_length=32, blank=True)
-    link_target = models.CharField(verbose_name="Adresse", max_length=500)
+    identifier = models.CharField(max_length=100, default='')
+    link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), db_index=True, blank=True)
+    link_target = models.CharField(verbose_name=_("address"), max_length=500)
     
     class Meta:
-        verbose_name = 'Link'
-        verbose_name_plural = 'Links'
+        verbose_name = _('link')
+        verbose_name_plural = _('links')
         app_label = 'pennyblack'
 
     def __unicode__(self):
@@ -103,5 +104,12 @@ class LinkInline(admin.TabularInline):
     model = Link
     max_num = 0
     can_delete = False
-    fields = ('link_target', 'identifier', 'link_hash', 'click_count')
-    readonly_fields = ('identifier', 'link_hash', 'click_count',)
+    fields = ('link_target', 'link_hash',)
+    readonly_fields = ('link_hash',)
+    
+    def queryset(self, request):
+        """
+        Don't show extra links because pickled views will get damaged on save.
+        """
+        queryset = super(LinkInline, self).queryset(request)
+        return queryset.filter(identifier='')

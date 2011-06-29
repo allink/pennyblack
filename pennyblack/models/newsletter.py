@@ -2,6 +2,7 @@
 import exceptions
 
 from django.conf.urls.defaults import patterns, url
+from django.core.exceptions import ImproperlyConfigured
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -10,6 +11,7 @@ from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
 from feincms.admin import editor
+from feincms.admin import item_editor
 from feincms.management.checker import check_database_schema
 from feincms.models import Base
 from feincms.utils import copy_model_instance
@@ -59,20 +61,22 @@ class NewsletterManager(models.Manager):
             return None
 
 class Newsletter(Base):
-    """A newsletter with subject and content
-    can contain multiple jobs with mails to send"""
-    name = models.CharField(verbose_name="Name", help_text="Wird nur intern verwendet.", max_length=100)
+    """
+    A newsletter with subject and content
+    can contain multiple jobs with mails to send
+    """
+    name = models.CharField(verbose_name=_("name"), help_text=_("Is only to describe the newsletter."), max_length=100)
     active = models.BooleanField(default=True)
     newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE,
-        verbose_name="Art", help_text="Kann später nicht mehr geändert werden")
-    sender = models.ForeignKey('pennyblack.Sender', verbose_name="Absender")
-    subject = models.CharField(verbose_name="Betreff", max_length=250)
-    reply_email = models.EmailField(verbose_name="Reply-to" ,blank=True)
-    language = models.CharField(max_length=6, verbose_name="Sprache", choices=settings.LANGUAGES)
-    header_image = models.ForeignKey('medialibrary.MediaFile', verbose_name="Header Image")
+        verbose_name=_("Type"), help_text=_("Can only be changed during creation."))
+    sender = models.ForeignKey('pennyblack.Sender', verbose_name=_("sender"))
+    subject = models.CharField(verbose_name=_("subject"), max_length=250)
+    reply_email = models.EmailField(verbose_name=_("reply-to") ,blank=True)
+    language = models.CharField(max_length=6, verbose_name=_("language"), choices=settings.LANGUAGES)
+    header_image = models.ForeignKey('medialibrary.MediaFile', verbose_name=_("header image"))
     header_url = models.URLField()
     header_url_replaced = models.CharField(max_length=250, default='')
-    site = models.ForeignKey('sites.Site', verbose_name="Seite")    
+    site = models.ForeignKey('sites.Site', verbose_name=_("site"))    
     #ga tracking
     utm_source = models.SlugField(verbose_name=_("utm Source"), default="newsletter")
     utm_medium = models.SlugField(verbose_name=_("utm Medium"), default="cpc")
@@ -81,8 +85,8 @@ class Newsletter(Base):
 
     class Meta:
         ordering = ('subject',)
-        verbose_name = "Newsletter"
-        verbose_name_plural = "Newsletters"
+        verbose_name = _("Newsletter")
+        verbose_name_plural = _("Newsletters")
         app_label = 'pennyblack'
             
     def __unicode__(self):
@@ -130,12 +134,19 @@ class Newsletter(Base):
         if not is_link(self.header_url, self.header_url_replaced):
             self.header_url_replaced = default_job.add_link(self.header_url)
             self.save()
-        #add extra links form group object
-        if job.group_object:
-            for identifier, view in job.group_object.get_extra_links().items():
-                default_job.add_link(view, identifier=identifier)
-                
+        if job.group_object and hasattr(job.group_object,'get_extra_links'):
+            from exceptions import DeprecationWarning
+            raise DeprecationWarning("get_extra_links is deprecated and will no longer work")
         
+    def prepare_to_send(self):
+        """
+        Last hook before the newsletter is sent
+        """
+        for cls in self._feincms_content_types:
+            for content in cls.objects.filter(parent=self):
+                if hasattr(content, 'prepare_to_send'):
+                    content.prepare_to_send()
+    
     def get_default_job(self):
         """
         Tries to get the default job. If no default job exists it creates one.
@@ -173,6 +184,7 @@ class Newsletter(Base):
                 kw = {}
             job=self.jobs.create(status=32, **kw) # 32=readonly
         self.replace_links(job)
+        self.prepare_to_send()
         mail = job.create_mail(person)
         try:
             message = mail.get_message()
@@ -181,15 +193,43 @@ class Newsletter(Base):
             raise
         else:
             mail.mark_sent()
+    
+    _view_links = {}
+    
+    @classmethod
+    def register_view_link(cls, identifier, view):
+        """
+        Register a new view link
+        Newsletter.register_view_link('my_identifier',view_function)
+        """
+        if identifier in cls._view_links.keys():
+            return
+        cls._view_links[identifier] = view
+    
+    @classmethod
+    def add_view_link_to_job(cls, identifier,job):
+        if identifier not in cls._view_links.keys():
+            raise ImproperlyConfigured("no view with identifier '%s' found" % identifier)
+        return job.add_link(cls._view_links[identifier], identifier=identifier)
+        
+        
             
 Newsletter.__module__ = 'pennyblack.models'    
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     list_display = ('name', 'subject', 'language', 'newsletter_type')
-    show_on_top = ('subject', 'sender', 'reply_email',)
     raw_id_fields = ('header_image',)
-    fields = ('name', 'newsletter_type', 'sender', 'subject', 'reply_email', 'language', 'utm_source', 'utm_medium', 'template_key', 'header_image', 'header_url', 'site')
+    fieldsets = (
+        (None, {
+            'fields': ['name', 'subject', 'sender', 'reply_email', 'template_key'],
+        }),
+        (_('Other options'), {
+            'classes': ['collapse',],
+            'fields': ('newsletter_type', 'language', 'utm_source','utm_medium', 'header_image', 'header_url', 'site'),
+        }),
+        item_editor.FEINCMS_CONTENT_FIELDSET,
+    )
     exclude = ('header_url_replaced',)
 
     def get_readonly_fields(self, request, obj=None):

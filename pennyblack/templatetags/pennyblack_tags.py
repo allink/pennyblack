@@ -98,7 +98,7 @@ class NewsletterLinkUrlNode(template.Node):
         self.identifier=identifier
         
     def render(self, context):
-        from pennyblack.models.link import Link
+        from pennyblack.models import Link, Newsletter
         if 'mail' not in context:
             return u'#'
         mail = context['mail']
@@ -109,10 +109,9 @@ class NewsletterLinkUrlNode(template.Node):
             job = mail.job
         try:
             link = job.links.get(identifier=self.identifier)
-            return context['base_url'] + reverse('pennyblack.redirect_link', args=(mail.mail_hash, link.link_hash))
         except job.links.model.DoesNotExist:
-            pass
-        return u'#'
+            link = Newsletter.add_view_link_to_job(self.identifier, job)
+        return context['base_url'] + reverse('pennyblack.redirect_link', args=(mail.mail_hash, link.link_hash))
 
 @register.tag
 def link_url(parser, token):
@@ -124,3 +123,16 @@ def link_url(parser, token):
         raise template.TemplateSyntaxError("%r expected format is 'link_url url_identifier'" %
             bits[0])
     return NewsletterLinkUrlNode(identifier=bits[1])
+
+class ContentImageUrlNode(template.Node):
+    def render(self, context):
+        if 'mail' in context:
+            return context['content'].get_image_url(context=context)
+        return context['content'].get_image_url()
+
+@register.tag
+def content_image_url(parser, token):
+    """
+    Renders the link of the given content.
+    """
+    return ContentImageUrlNode()

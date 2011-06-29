@@ -37,6 +37,10 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
     
     class Meta:
         exclude = ('image_thumb', 'image_width', 'image_height', 'image_url_replaced')
+    
+    def __init__(self, *args, **kwargs):
+        super(NewsletterSectionAdminForm, self).__init__(*args, **kwargs)
+        self.fields.insert(0, 'title', self.fields.pop('title'))
 
 class TextOnlyNewsletterContent(RichTextContent):
     """
@@ -72,6 +76,12 @@ class TextOnlyNewsletterContent(RichTextContent):
             replacelink = job.add_link(link)
             self.text = ''.join((self.text[:match.start(1)+offset], replacelink, self.text[match.end(1)+offset:]))
             offset += len(replacelink) - len(match.group(1))
+        
+    def prepare_to_send(self):
+        """
+        insert link_style into all a tags
+        """
+        self.text = re.sub(r"<a ","<a {% get_newsletterstyle request text_and_image_title %}", self.text)
         
     def get_template(self):
         """
@@ -128,15 +138,16 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         {%% block text %%}%s{%% endblock %%}
         """ % (self.baselayout, self.title, self.text))
     
-    def get_image_url(self, mail=None, base_url=None):
+    def get_image_url(self, context=None):
         """
         Gives the repalced url back, if no mail is present it gives instead
         the original url.
         """
-        if not mail or not base_url:
+        if context is None:
             return self.image_url
-        return self.image_url_replaced.replace('{{base_url}}',base_url)
-    
+        template = Template(self.image_url_replaced)
+        return template.render(context)
+            
     def replace_links(self, job):
         super(TextWithImageNewsletterContent, self).replace_links(job)
         if not is_link(self.image_url, self.image_url_replaced):
@@ -148,7 +159,7 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
         im=Image.open(self.image_original.file.path)
         im.thumbnail((image_width, 1000), Image.ANTIALIAS)
         img_temp = files.temp.NamedTemporaryFile()
-        im.save(img_temp,'jpeg')
+        im.save(img_temp,'jpeg', quality=settings.JPEG_QUALITY, optimize=True)
         img_temp.flush()
         self.image_thumb.save(os.path.split(self.image_original.file.name)[1], files.File(img_temp), save=False)
         super(TextWithImageNewsletterContent, self).save(*args, **kwargs)

@@ -1,0 +1,129 @@
+{%extends "admin/change_form.html" %}
+{% load i18n %}
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{{STATIC_URL}}/pennyblack/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{STATIC_URL}}/pennyblack/jquery.flot.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{STATIC_URL}}/pennyblack/jquery.flot.selection.min.js" type="text/javascript" charset="utf-8"></script>
+    <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="{{STATIC_URL}}/pennyblack/excanvas.min.js"></script><![endif]-->
+{% endblock %}
+
+{% block content %}<div id="content-main">
+{% block object-tools %}
+  <ul class="object-tools">
+    {% block object-tools-items %}
+    <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
+    {% endblock %}
+  </ul>
+{% endblock %}
+<div>
+{% for fieldset in adminform %}
+  {% include "admin/includes/fieldset.html" %}
+{% endfor %}
+
+{% for inline_admin_formset in inline_admin_formsets %}
+    {% include inline_admin_formset.opts.template %}
+{% endfor %}
+{% block after_related_objects %}
+    <h2>{% trans "email statistics"|capfirst %}</h2>
+    <table border="0">
+        <tr><th></th><th>{% trans "Count" %}</th><th>{% trans "Percentage" %}</th></tr>
+        <tr><th>{% trans "Mails sent" %}</th><td>{{original.count_mails_sent}}</td><td>{{original.percentage_mails_sent}}%</td></tr>
+        <tr><th>{% trans "Mails opened" %}</th><td>{{original.count_mails_viewed}}</td><td>{{original.percentage_mails_viewed}}%</td></tr>
+        <tr><th>{% trans "Mails bounced" %}</th><td>{{original.count_mails_bounced}}</td><td>{{original.percentage_mails_bounced}}%</td></tr>
+        <tr><th>{% trans "Total Mails" %}</th><td>{{original.count_mails_total}}</td></tr>
+    </table>
+    <h2>{% trans "link statistics"|capfirst %}</h2>
+    <table border="0">
+        <tr>
+            <th>Target</th>
+            <th>Clicks</th>
+        </tr>
+        {% for link in original.links.all %}
+            <tr>
+                <td>
+                    {% if link.identifier %}
+                        {{link.identifier}}
+                    {% else %}
+                        {{link.link_target}}
+                    {% endif %}
+                </td>
+                <td>{{link.click_count}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <h2>{% trans "graphs"|capfirst %}</h2>
+    <div id="placeholder" style="width:600px;height:300px;"></div>
+    <div id="overview" style="margin-left:50px;margin-top:20px;width:400px;height:50px"></div>
+
+    <script id="source">
+    $(function () {
+        var d = [{{opened_serie}}];
+
+        // first correct the timestamps - they are recorded as the daily
+        // midnights in UTC+0100, but Flot always displays dates in UTC
+        // so we have to add one hour to hit the midnights in the plot
+        // for (var i = 0; i < d.length; ++i)
+        //   d[i][0] += 60 * 60 * 1000;
+
+        // helper for returning the weekends in a period
+        function weekendAreas(axes) {
+            var markings = [];
+            var d = new Date(axes.xaxis.min);
+            // go to the first Saturday
+            d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7))
+            d.setUTCSeconds(0);
+            d.setUTCMinutes(0);
+            d.setUTCHours(0);
+            var i = d.getTime();
+            do {
+                // when we don't set yaxis, the rectangle automatically
+                // extends to infinity upwards and downwards
+                markings.push({ xaxis: { from: i, to: i + 2 * 24 * 60 * 60 * 1000 } });
+                i += 7 * 24 * 60 * 60 * 1000;
+            } while (i < axes.xaxis.max);
+
+            return markings;
+        }
+
+        var options = {
+            xaxis: { mode: "time", tickLength: 5 },
+            selection: { mode: "x" },
+            grid: { markings: weekendAreas }
+        };
+
+        var plot = $.plot($("#placeholder"), [d], options);
+
+        var overview = $.plot($("#overview"), [d], {
+            series: {
+                lines: { show: true, lineWidth: 1 },
+                shadowSize: 0
+            },
+            xaxis: { ticks: [], mode: "time" },
+            yaxis: { ticks: [], min: 0, autoscaleMargin: 0.1 },
+            selection: { mode: "x" }
+        });
+
+        // now connect the two
+
+        $("#placeholder").bind("plotselected", function (event, ranges) {
+            // do the zooming
+            plot = $.plot($("#placeholder"), [d],
+                          $.extend(true, {}, options, {
+                              xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
+                          }));
+
+            // don't fire event on the overview to prevent eternal loop
+            overview.setSelection(ranges, true);
+        });
+
+        $("#overview").bind("plotselected", function (event, ranges) {
+            plot.setSelection(ranges);
+        });
+    });
+    </script>
+    
+{% endblock %}
+</div>
+{% endblock %}
+

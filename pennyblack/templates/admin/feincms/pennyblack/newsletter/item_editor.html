@@ -3,30 +3,8 @@
 {% load i18n %}
 
 {% block object-tools %}
-<style type="text/css" media="screen">
-    #content-main ul.object-tools {
-        float:right;
-        margin:0 0 1em;
-    }
-    .object-tools + form {
-        clear:both;
-    }
-</style>
 <ul class="object-tools">
-    <li><a href="preview/" target="_blank">{% trans "Preview" %}</a></li></ul>
-{{ block.super }}
-{% endblock %}
-
-
-{% block breadcrumbs %}
-<div class="breadcrumbs">
-     <a href="../../../">{% trans "Home" %}</a> &rsaquo;
-     <a href="../">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
-
-     {% for p in object.get_ancestors %}
-       <a href="../?parent__id__exact={{ p.id }}">{{ p.short_title }}</a> :
-     {% endfor %}
-     {{ object.short_title }}
-
-</div>
+    <li><a href="preview/" target="_blank">{% trans "preview"|capfirst %}</a></li>
+    <li><a href="history/" class="historylink">{% trans "History" %}</a></li>
+</ul>
 {% endblock %}
