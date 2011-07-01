@@ -11,6 +11,7 @@ Contents:
     :maxdepth: 2
    
     installation.rst
+    content.rst
     settings.rst
     integration.rst
     template.rst
