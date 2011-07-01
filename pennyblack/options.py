@@ -21,9 +21,6 @@ class NewsletterReceiverMixin(object):
     def on_bounce(self, mail):
         pass
         
-    def unsubscribe(self):
-        pass
-
 class JobUnitMixin(object):
     """
     Mixin for every object which can be target of a Job
