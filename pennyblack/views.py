@@ -1,14 +1,13 @@
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import F
-from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
 from django.utils.functional import wraps
 
-from pennyblack.models import Newsletter, Link, Mail
+from pennyblack.models import Newsletter, Link, Mail, Job
 
 import types
 
@@ -49,6 +48,13 @@ def preview(request, newsletter_id):
         'newsletter' : newsletter,
         'webview' : True,
         }
+    job_id = request.GET.get('job',None)
+    if job_id:
+        job = get_object_or_404(Job, pk=job_id)
+        if job.mails.count():
+            mail = job.mails.all()[0]
+            request.content_context.update(mail.get_context())
+            request.content_context.update({'base_url':''})
     return render_to_response(newsletter.template.path, request.content_context, context_instance=RequestContext(request))
     
 @needs_mail

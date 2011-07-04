@@ -20,7 +20,7 @@
         <tr><th></th><th>{% trans "SPF result"|capfirst %}</th><td>{{object.newsletter.sender.check_spf}}</td></tr>
     </table>
     <iframe width="800" height="1024"
-        src="{% url admin:pennyblack.views.preview object.newsletter.id %}">
+        src="{% url admin:pennyblack.views.preview object.newsletter.id %}?job={{object.id}}">
     </iframe>
         <form action="{% url admin:pennyblack_job_send object.id %}" method="post" id="pennyblack_newsletter_form">{% csrf_token %}
         <div class="submit-row">

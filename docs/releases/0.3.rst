@@ -1,0 +1,9 @@
+==============================
+Pennyblack 0.3.0 release notes
+==============================
+
+Changes
+=======
+
+* Send confirmation view now shows a valid email. This should help to not send
+  newsletters with wrong variables set.
