@@ -96,21 +96,12 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 ROOT_URLCONF = 'example.urls'
-STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-)
-
-# List of finder classes that know how to find static files in
-# various locations.
-STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 TEMPLATE_DIRS = (
@@ -127,7 +118,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'django.contrib.staticfiles',
+    'django.contrib.admindocs',
     'feincms',
     'feincms.module.medialibrary',
     'pennyblack',
@@ -137,8 +128,8 @@ INSTALLED_APPS = (
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-TINYMCE_JS_URL = MEDIA_URL + 'javascript/tiny_mce/tiny_mce.js'
-# TINYMCE_CONFIG_URL = 'admin/tiny_mce_config.html'
-# TINYMCE_CONTENT_CSS_URL = MEDIA_URL + 'stylesheets/tiny_mce.css'
-# TINYMCE_LINK_LIST_URL = '/admin/javascript/tiny_mce_links.js'
-
+FEINCMS_RICHTEXT_INIT_CONTEXT = {
+    'TINYMCE_JS_URL': os.path.join(STATIC_URL, 'javascript/tiny_mce/tiny_mce.js'),
+    'TINYMCE_CONTENT_CSS_URL': None,
+    'TINYMCE_LINK_LIST_URL': None
+}
