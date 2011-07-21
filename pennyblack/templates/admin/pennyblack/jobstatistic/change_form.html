@@ -28,10 +28,12 @@
     <h2>{% trans "email statistics"|capfirst %}</h2>
     <table border="0">
         <tr><th></th><th>{% trans "Count" %}</th><th>{% trans "Percentage" %}</th></tr>
+        <tr><th>{% trans "Total mails" %}</th><td>{{original.count_mails_total}}</td><td></td></tr>
         <tr><th>{% trans "Mails sent" %}</th><td>{{original.count_mails_sent}}</td><td>{{original.percentage_mails_sent}}%</td></tr>
-        <tr><th>{% trans "Mails opened" %}</th><td>{{original.count_mails_viewed}}</td><td>{{original.percentage_mails_viewed}}%</td></tr>
         <tr><th>{% trans "Mails bounced" %}</th><td>{{original.count_mails_bounced}}</td><td>{{original.percentage_mails_bounced}}%</td></tr>
-        <tr><th>{% trans "Total Mails" %}</th><td>{{original.count_mails_total}}</td></tr>
+        <tr><th>{% trans "Mails delivered" %}</th><td>{{original.count_mails_delivered}}</td><td></td></tr>
+        <tr><th>{% trans "Mails opened" %}</th><td>{{original.count_mails_viewed}}</td><td>{{original.percentage_mails_viewed}}%</td></tr>
+        <tr><th>{% trans "Mails clicked" %}</th><td>{{original.count_mails_clicked}}</td><td>{{original.percentage_mails_clicked}}%</td></tr>
     </table>
     <h2>{% trans "link statistics"|capfirst %}</h2>
     <table border="0">
