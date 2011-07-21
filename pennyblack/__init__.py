@@ -1,4 +1,4 @@
-VERSION = (0, 2, 1)
+VERSION = (0, 3, 0, 'pre')
 __version__ = '.'.join(map(str, VERSION))
 
 from exceptions import ImportError
