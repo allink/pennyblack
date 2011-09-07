@@ -1,5 +1,6 @@
 {% extends "admin/content/richtext/init_tinymce.html" %}
 {% block settings %}
     convert_urls : false,
+    entity_encoding : "raw",
     {{block.super}}
 {% endblock %}
