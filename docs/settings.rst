@@ -39,7 +39,13 @@ Newsletter
 
 .. attribute:: TEXT_AND_IMAGE_CONTENT_POSITIONS
 
+    A list of position choices for the TextWithImageNewsletterContent.
+
 .. attribute:: TEXT_AND_IMAGE_CONTENT_IMAGE_WIDTH_SIDE
+
+.. attribute:: JPEG_QUALITY
+    
+    The quality in percent which is used to compress jpeg images.
 
 Job
 ---

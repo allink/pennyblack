@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from pennyblack import settings
 
 if settings.BOUNCE_DETECTION_ENABLE:
-    from Mailman.Bouncers.BouncerAPI_new import ScanText
+    from Mailman.Bouncers.BouncerAPI import ScanText
 
 import imaplib
 import datetime

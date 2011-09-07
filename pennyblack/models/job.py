@@ -54,40 +54,67 @@ class Job(models.Model):
             self.newsletter.delete()
         super(Job, self).delete(*args, **kwargs)
     
+    @property
     def count_mails_total(self):
         return self.mails.count()
-    count_mails_total.short_description = _('# of mails')
     
+    @property
     def count_mails_sent(self):
         return self.mails.filter(sent=True).count()
-    count_mails_sent.short_description = _('# of mails sent')
 
     @property
     def percentage_mails_sent(self):
-        if self.count_mails_total() == 0:
+        if self.count_mails_total == 0:
             return 0
-        return round(float(self.count_mails_sent())/float(self.count_mails_total()) * 100, 1)
+        return round(float(self.count_mails_sent)/float(self.count_mails_total) * 100, 1)
     
+    @property
     def count_mails_viewed(self):
         return self.mails.exclude(viewed=None).count()
-    count_mails_viewed.short_description = _('# of views')
+    
+    @property
+    def count_mails_delivered(self):
+        return self.count_mails_sent - self.count_mails_bounced
 
     @property
     def percentage_mails_viewed(self):
-        total = float(self.count_mails_total() - self.count_mails_bounced())
-        if total == 0:
+        if self.count_mails_delivered == 0:
             return 0
-        return round(float(self.count_mails_viewed())/total * 100, 1)
+        return round(float(self.count_mails_viewed)/self.count_mails_delivered * 100, 1)
     
+    @property
     def count_mails_bounced(self):
         return self.mails.filter(bounced=True).count()
-    count_mails_bounced.short_description = _('# of bounces')
+
+    @property
+    def count_mails_clicked(self):
+        return self.mails.filter(clicks__isnull=False).count()
+    
+    @property
+    def percentage_mails_clicked(self):
+        if self.count_mails_delivered == 0:
+            return 0
+        return round(float(self.count_mails_clicked)/float(self.count_mails_delivered) * 100, 1)
 
     @property
     def percentage_mails_bounced(self):
-        if self.count_mails_total() == 0:
+        if self.count_mails_sent == 0:
             return 0
-        return round(float(self.count_mails_bounced())/float(self.count_mails_total()) * 100, 1)
+        return round(float(self.count_mails_bounced)/float(self.count_mails_sent) * 100, 1)
+
+    # fields
+    def field_mails_sent(self):
+        return self.count_mails_sent
+    field_mails_sent.short_description = _('# of mails sent')
+    
+    def field_opening_rate(self):
+        return '%s%%' % self.percentage_mails_viewed
+    field_opening_rate.short_description = _('opening rate')
+    
+    def field_mails_total(self):
+        return self.count_mails_total
+    field_mails_total.short_description = _('# of mails')
+    
 
     def can_send(self):
         """
@@ -130,6 +157,9 @@ class Job(models.Model):
                 return self.links.get(identifier=identifier)
             except self.links.model.DoesNotExist:
                 return self.links.create(view=link, identifier=identifier)
+        # clean link from htmlentities
+        for old, new in (('&amp;','&'),('&lt;','<'),('&gt;','>'),('&quot;','"')):
+            link = link.replace(old, new)
         link = self.links.create(link_target=link, identifier=identifier)
         link.save()
         return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
@@ -170,10 +200,10 @@ class JobAdmin(admin.ModelAdmin):
     
     date_hierarchy = 'date_deliver_start'
     actions = None
-    list_display = ('newsletter', 'group_object', 'status', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
+    list_display = ('newsletter', 'group_object', 'status', 'field_mails_total', 'field_mails_sent', 'date_created')
     list_filter   = ('status', 'newsletter',)
-    fields = ('newsletter', 'collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')
-    readonly_fields = ('collection', 'status', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_deliver_start', 'date_deliver_finished',)    
+    fields = ('newsletter', 'collection', 'status', 'group_object', 'field_mails_total', 'field_mails_sent', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')
+    readonly_fields = ('collection', 'status', 'group_object', 'field_mails_total', 'field_mails_sent', 'date_deliver_start', 'date_deliver_finished',)    
     inlines = (LinkInline, MailInline,)
     massmail_form = JobAdminForm
     
@@ -245,7 +275,7 @@ class JobStatistic(Job):
 class JobStatisticAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
     actions = None
-    list_display = ('newsletter', 'group_object', 'count_mails_total', 'count_mails_sent', 'count_mails_viewed', 'date_created')
+    list_display = ('newsletter', 'group_object', 'field_mails_total', 'field_mails_sent', 'field_opening_rate', 'date_created')
     # list_filter   = ('status', 'newsletter',)
     fields = ('newsletter', 'collection', 'group_object', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')
     readonly_fields = ('newsletter', 'collection', 'group_object', 'date_deliver_start', 'date_deliver_finished', 'utm_campaign')    

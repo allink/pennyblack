@@ -1,0 +1,26 @@
+diff -crB Mailman_old/Bouncers/BouncerAPI.py Mailman/Bouncers/BouncerAPI.py
+*** Mailman_old/Bouncers/BouncerAPI.py	2010-12-03 12:03:28.000000000 +0100
+--- Mailman/Bouncers/BouncerAPI.py	2011-07-22 16:35:22.000000000 +0200
+***************
+*** 24,29 ****
+--- 24,30 ----
+  """
+  
+  import sys
++ import email
+  
+  from Mailman.Logging.Syslog import syslog
+  
+***************
+*** 68,70 ****
+--- 69,78 ----
+              # Return addrs even if it is Stop. BounceRunner needs this info.
+              return addrs
+      return []
++ 
++ def ScanText(msg_as_text):
++     mime = email.message_from_string(msg_as_text)
++     addrs = ScanMessages(None, mime)
++     if type(addrs) != type([]):
++         return ''
++     return ';'.join(addrs)

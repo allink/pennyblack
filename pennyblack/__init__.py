@@ -1,7 +1,6 @@
-VERSION = (0, 2, 1)
+VERSION = (0, 3, 0,)
 __version__ = '.'.join(map(str, VERSION))
 
-from exceptions import ImportError
 # Do not use Django settings at module level as recommended
 try:
     from django.utils.functional import LazyObject
