@@ -1,9 +1,19 @@
-==============================
 Pennyblack 0.3.0 release notes
-==============================
+******************************
 
 Changes
 =======
 
-* Send confirmation view now shows a valid email. This should help to not send
-  newsletters with wrong variables set.
+*   Added a patch to patch mailman 2.x and changed the import to meet this new
+    setup.
+*   Send confirmation view now shows a valid email. This should help to not send
+    newsletters with wrong variables set.
+*   Some more information in the statistics view.
+*   Documentation overhaul.
+
+
+Upgrade
+=======
+
+* If you use bounce detection you have to change the name of the BouncerApi
+  file from ``BouncerAPI_new.py`` to ``BouncerAPI.py``
