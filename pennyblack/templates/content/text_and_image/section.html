@@ -8,7 +8,7 @@
     </tr>
     {% if content.position == 'top' %}
         <tr>
-            <td colspan="3" align="center"><img src="{{base_url}}{{content.image_thumb.url}}" /></td>
+            <td colspan="3" align="center">{% if content.get_image_url != '' %}<a href="{% content_image_url %}">{% endif %}<img src="{{base_url}}{{content.image_thumb.url}}" />{% if content.get_image_url != '' %}</a>{% endif %}</td>
         </tr>
         <tr>
             <td height="10" colspan="3">&nbsp;</td>
@@ -16,13 +16,13 @@
     {% endif %}
     <tr>
         {% if content.position == 'left' %}
-            <td width="{{image_width}}" align="left" valign="top"><img src="{{base_url}}{{content.image_thumb.url}}" /></td>
+            <td width="{{image_width}}" align="left" valign="top">{% if content.get_image_url != '' %}<a href="{% content_image_url %}">{% endif %}<img src="{{base_url}}{{content.image_thumb.url}}" />{% if content.get_image_url != '' %}</a>{% endif %}</td>
             <td width="20">&nbsp;</td>
         {% endif %}
         <td width="{{text_width}}" align="left" valign="top" style="{% get_newsletterstyle request text_and_image_text %}">{% block text %}{% endblock %}</td>
         {% if content.position == 'right' %}
             <td width="20">&nbsp;</td>
-            <td width="{{image_width}}" align="left" valign="top"><img src="{{base_url}}{{content.image_thumb.url}}" /></td>
+            <td width="{{image_width}}" align="left" valign="top">{% if content.get_image_url != '' %}<a href="{% content_image_url %}">{% endif %}<img src="{{base_url}}{{content.image_thumb.url}}" />{% if content.get_image_url != '' %}</a>{% endif %}</td>
         {% endif %}
     </tr>
 </table>
