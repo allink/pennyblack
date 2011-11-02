@@ -7,7 +7,6 @@ from django.utils.translation import ugettext_lazy as _
 import datetime
 import hashlib
 import random
-import pickle
 
 #-----------------------------------------------------------------------------
 # Link
@@ -48,7 +47,7 @@ class Link(models.Model):
     job = models.ForeignKey('pennyblack.Job', related_name='links')
     identifier = models.CharField(max_length=100, default='')
     link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), db_index=True, blank=True)
-    link_target = models.CharField(verbose_name=_("address"), max_length=500)
+    link_target = models.CharField(verbose_name=_("address"), max_length=500, default='')
     
     class Meta:
         verbose_name = _('link')
@@ -57,13 +56,7 @@ class Link(models.Model):
 
     def __unicode__(self):
         return self.link_target
-    
-    def __init__(self, *args, **kwargs):
-        if 'view' in kwargs.keys():
-            kwargs['link_target'] = pickle.dumps(kwargs['view'])
-            del kwargs['view']
-        return super(Link, self).__init__(*args, **kwargs)
-    
+        
     def click_count(self):
         """
         Returns the total click count.
@@ -82,8 +75,9 @@ class Link(models.Model):
         """
         gets the link target by evaluating the string using the email content
         """
+        from pennyblack.models import Newsletter
         if self.identifier != '':
-            return pickle.loads(str(self.link_target))
+            return Newsletter.get_view_link(self.identifier)
         template = Template(self.link_target)
         return template.render(Context(mail.get_context()))
 
@@ -109,7 +103,7 @@ class LinkInline(admin.TabularInline):
     
     def queryset(self, request):
         """
-        Don't show extra links because pickled views will get damaged on save.
+        Don't show links with identifier because they aren't changable.
         """
         queryset = super(LinkInline, self).queryset(request)
         return queryset.filter(identifier='')
