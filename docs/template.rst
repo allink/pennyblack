@@ -19,4 +19,13 @@ shown in the example project.
             ),
         })
         
+Context
+=======
+
+By default the template context in emails is as follows:
+
+person: person object
+group_object: corresponding group (only if available)
+mail: the mail object
+base_url: base url
 
