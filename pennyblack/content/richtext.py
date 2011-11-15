@@ -81,13 +81,15 @@ class TextOnlyNewsletterContent(RichTextContent):
         """
         insert link_style into all a tags
         """
-        self.text = re.sub(r"<a ","<a {% get_newsletterstyle request text_and_image_title %}", self.text)
+        self.text = re.sub(r"<a ","<a style=\"{% get_newsletterstyle request link_style %}\"", self.text)
+        self.save()
         
     def get_template(self):
         """
         Creates a template
         """
         return Template("""{%% extends "%s" %%}
+        {%% load pennyblack_tags %%}
         {%% block title %%}%s{%% endblock %%}
         {%% block text %%}%s{%% endblock %%}
         """ % (self.baselayout, self.title, self.text,))
