@@ -1,4 +1,4 @@
-VERSION = (0, 3, 3,)
+VERSION = (0, 3, 4, 'pre')
 __version__ = '.'.join(map(str, VERSION))
 
 # Do not use Django settings at module level as recommended
