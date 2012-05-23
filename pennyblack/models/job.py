@@ -298,7 +298,7 @@ class JobStatisticAdmin(admin.ModelAdmin):
         else:
             now = timezone.now()
         opened_serie = []
-        for i in range(7200):
+        for i in range(336):
             t = date_start + datetime.timedelta(hours=i)
             count_opened = obj.mails.exclude(viewed=None).filter(viewed__lt=t).count()
             opened_serie.append('[%s000,%s]' % (t.strftime('%s'),count_opened))
