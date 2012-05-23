@@ -312,4 +312,4 @@ class JobStatisticAdmin(admin.ModelAdmin):
         obj = self.get_object(request, unquote(object_id))
         graph_data = self.get_graph_data(obj)
         extra_context.update(graph_data)
-        return super(JobStatisticAdmin, self).change_view(request, object_id, extra_context)
+        return super(JobStatisticAdmin, self).change_view(request, object_id, extra_context=extra_context)
