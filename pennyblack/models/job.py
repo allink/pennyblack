@@ -291,12 +291,18 @@ class JobStatisticAdmin(admin.ModelAdmin):
 
     def get_graph_data(self,obj):
         date_start = obj.date_deliver_start.replace(minute=0,second=0,microsecond=0)
+        try:
+            from django.utils import timezone
+        except ImportError:
+            now = datetime.datetime.now()
+        else:
+            now = timezone.now()
         opened_serie = []
         for i in range(7200):
             t = date_start + datetime.timedelta(hours=i)
             count_opened = obj.mails.exclude(viewed=None).filter(viewed__lt=t).count()
             opened_serie.append('[%s000,%s]' % (t.strftime('%s'),count_opened))
-            if t > datetime.datetime.now():
+            if t > now:
                 break
         return {
             'opened_serie': ','.join(opened_serie),
