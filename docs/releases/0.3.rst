@@ -1,8 +1,20 @@
 Pennyblack 0.3.0 release notes
 ******************************
 
-Changes
-=======
+Changes 0.3.2
+=============
+
+*   Don't save pickled views to database because of problems when migrating or
+    upgrading.
+
+Changes 0.3.1
+=============
+
+*   Fix tracking of image links in Text and image content
+*   Some improvements in the default templates
+
+Changes 0.3.0
+=============
 
 *   Added a patch to patch mailman 2.x and changed the import to meet this new
     setup.

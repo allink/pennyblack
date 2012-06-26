@@ -211,7 +211,12 @@ class Newsletter(Base):
         if identifier not in cls._view_links.keys():
             raise ImproperlyConfigured("no view with identifier '%s' found" % identifier)
         return job.add_link(cls._view_links[identifier], identifier=identifier)
-        
+    
+    @classmethod
+    def get_view_link(cls, identifier):
+        if identifier not in cls._view_links.keys():
+            raise ImproperlyConfigured("no view with identifier '%s' found" % identifier)
+        return cls._view_links[identifier]
         
             
 Newsletter.__module__ = 'pennyblack.models'    

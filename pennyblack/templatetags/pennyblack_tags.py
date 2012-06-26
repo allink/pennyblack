@@ -66,7 +66,11 @@ class NewsletterHeaderImageNode(template.Node):
     def render(self, context):
         newsletter = context['newsletter']
         if context['webview']:
-            header_url = ''
+            if 'mail' in context:
+                mail = context['mail']
+                header_url = mail.get_header_url()
+            else:
+                header_url = ''
             header_image = newsletter.header_image.get_absolute_url()
         else:
             mail = context['mail']

@@ -156,11 +156,11 @@ class Job(models.Model):
             try:
                 return self.links.get(identifier=identifier)
             except self.links.model.DoesNotExist:
-                return self.links.create(view=link, identifier=identifier)
+                return self.links.create(link_target='', identifier=identifier)
         # clean link from htmlentities
         for old, new in (('&amp;','&'),('&lt;','<'),('&gt;','>'),('&quot;','"')):
             link = link.replace(old, new)
-        link = self.links.create(link_target=link, identifier=identifier)
+        link = self.links.create(link_target=link)
         link.save()
         return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
     
@@ -222,7 +222,7 @@ class JobAdmin(admin.ModelAdmin):
         obj = self.get_object(request, unquote(object_id))
         extra_context['can_send']=obj.can_send()
         request._pennyblack_job_obj = obj # add object to request for the mail inline
-        return super(JobAdmin, self).change_view(request, object_id, extra_context)
+        return super(JobAdmin, self).change_view(request, object_id, extra_context=extra_context)
 
     def send_newsletter_view(self,request, object_id):
         obj = self.get_object(request, unquote(object_id))
