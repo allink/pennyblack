@@ -130,16 +130,7 @@ class TextWithImageNewsletterContent(TextOnlyNewsletterContent):
             'image_height': self.image_height,
             'text_width': text_width,
         }
-    
-    def get_template(self):
-        """
-        Creates a template
-        """
-        return Template("""{%% extends "%s" %%}
-        {%% block title %%}%s{%% endblock %%}
-        {%% block text %%}%s{%% endblock %%}
-        """ % (self.baselayout, self.title, self.text))
-    
+
     def get_image_url(self, context=None):
         """
         Gives the repalced url back, if no mail is present it gives instead
