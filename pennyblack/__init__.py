@@ -20,6 +20,7 @@ else:
 
     settings = LazySettings()
 
+
 def send_newsletter(newsletter_name, *args, **kwargs):
     """
     Gets a newsletter by its name and tries to send it to receiver

@@ -5,12 +5,12 @@ from setuptools import setup
 import pennyblack
 setup(
     name='pennyblack',
-    version = pennyblack.__version__,
-    description = 'django based newsletter toolkit',
+    version=pennyblack.__version__,
+    description='django based newsletter toolkit',
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
-    author = 'Marc Egli',
-    author_email = 'egli@allink.ch',
-    url = 'http://github.com/allink/pennyblack/',
+    author='Marc Egli',
+    author_email='egli@allink.ch',
+    url='http://github.com/allink/pennyblack/',
     license='BSD License',
     platforms=['OS Independent'],
     packages=[
@@ -42,5 +42,5 @@ setup(
         'pyspf',
         'pil',
     ],
-    include_package_data=True,    
+    include_package_data=True,
 )

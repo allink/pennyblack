@@ -1,7 +1,4 @@
-from django.db import models
-
 from pennyblack.models import Newsletter
-from pennyblack.options import NewsletterReceiverMixin, JobUnitMixin
 from pennyblack.content.richtext import TextOnlyNewsletterContent, \
     TextWithImageNewsletterContent
 
@@ -13,6 +10,6 @@ Newsletter.register_templates({
         ('main', 'Main Region'),
         ),
     })
-    
+
 Newsletter.create_content_type(TextOnlyNewsletterContent)
 Newsletter.create_content_type(TextWithImageNewsletterContent)

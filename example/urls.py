@@ -8,6 +8,6 @@ urlpatterns = patterns('',
         {'document_root': settings.MEDIA_ROOT}),
     (r'^admin/doc/', include('django.contrib.admindocs.urls')),
     (r'^admin/', include(admin.site.urls)),
-    
-    url(r'^newsletter/', include('pennyblack.urls'), name = 'pennyblack'),
+
+    url(r'^newsletter/', include('pennyblack.urls'), name='pennyblack'),
 )
