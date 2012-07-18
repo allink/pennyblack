@@ -137,10 +137,16 @@ def link_url(parser, token):
 
 
 class ContentImageUrlNode(template.Node):
+    def __init__(self, identifier=None):
+        self.identifier = identifier
+
     def render(self, context):
+        kwargs = {}
         if 'mail' in context:
-            return context['content'].get_image_url(context=context)
-        return context['content'].get_image_url()
+            kwargs['context'] = context
+        if self.identifier:
+            kwargs['identifier'] = self.identifier
+        return context['content'].get_image_url(**kwargs)
 
 
 @register.tag
@@ -148,4 +154,7 @@ def content_image_url(parser, token):
     """
     Renders the link of the given content.
     """
+    bits = list(token.split_contents())
+    if len(bits) == 2:
+        return ContentImageUrlNode(identifier=bits[1])
     return ContentImageUrlNode()
