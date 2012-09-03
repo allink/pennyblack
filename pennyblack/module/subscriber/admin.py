@@ -8,8 +8,8 @@ admin.site.register(SubscriberGroup, SubscriberGroupAdmin)
 
 try:
     from admin_import.options import add_import
-except ImportError, e:
-    if not e.message == 'No module named admin_import.options':
+except ImportError as e:
+    if not str(e) == 'No module named admin_import.options':
         raise
 else:
     from django.conf import settings as django_settings
