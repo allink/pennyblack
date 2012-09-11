@@ -115,7 +115,7 @@ class Mail(models.Model):
         message = mail.EmailMessage(
             self.job.newsletter.subject,
             self.get_content(),
-            self.job.newsletter.sender.email,
+            "%s <%s>" % (self.job.newsletter.sender.name, self.job.newsletter.sender.email),
             [self.email],
             headers=headers,
         )
