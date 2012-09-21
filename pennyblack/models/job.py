@@ -163,7 +163,18 @@ class Job(models.Model):
         link = self.links.create(link_target=link)
         link.save()
         return '{{base_url}}' + reverse('pennyblack.redirect_link', kwargs={'mail_hash':'{{mail.mail_hash}}','link_hash':link.link_hash}).replace('%7B','{').replace('%7D','}')
-    
+
+    def start_sending(self):
+        self.status = 11
+        self.save()
+        try:
+            from pennyblack.tasks import SendJobTask
+        except ImportError:
+            pass
+        else:
+            SendJobTask.delay(self.id)
+
+
     def send(self):
         """
         Sends every pending e-mail in the job.
@@ -227,8 +238,7 @@ class JobAdmin(admin.ModelAdmin):
     def send_newsletter_view(self,request, object_id):
         obj = self.get_object(request, unquote(object_id))
         if request.method == 'POST' and request.POST.has_key("_send"):
-            obj.status = 11
-            obj.save()
+            obj.start_sending()
             self.message_user(request, _("Newsletter has been marked for delivery."))
         return HttpResponseRedirect(reverse('admin:%s_%s_changelist' %(self.model._meta.app_label,  self.model._meta.module_name)))
 
