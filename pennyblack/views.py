@@ -48,7 +48,7 @@ def preview(request, newsletter_id):
     request.content_context = {
         'newsletter': newsletter,
         'webview': True,
-        }
+    }
     job_id = request.GET.get('job', None)
     if job_id:
         job = get_object_or_404(Job, pk=job_id)

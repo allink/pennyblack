@@ -2,7 +2,8 @@ from django.core.validators import email_re
 
 from pennyblack.module.subscriber.models import NewsletterSubscriber, SubscriberGroup
 
-def add_subscriber(email,groups=[], **kwargs):
+
+def add_subscriber(email, groups=[], **kwargs):
     """
     Adds a subscriber to the given groups
     """

@@ -18,6 +18,7 @@ from feincms.utils import copy_model_instance
 
 from pennyblack import settings
 
+
 #-----------------------------------------------------------------------------
 # Newsletter
 #-----------------------------------------------------------------------------
@@ -27,19 +28,19 @@ class NewsletterManager(models.Manager):
         Filters all active newsletters
         """
         return self.filter(active=True)
-    
+
     def massmail(self):
         """
         Filters all newsletter avaiable for massmailing
         """
         return self.active().filter(newsletter_type__in=settings.NEWSLETTER_TYPE_MASSMAIL)
-        
+
     def workflow(self):
         """
         Filters all newsletter avaiable in a workflow eg. signupmail
         """
         return self.active().filter(newsletter_type__in=settings.NEWSLETTER_TYPE_WORKFLOW)
-    
+
     def get_workflow_newsletter_by_name(self, name):
         """
         Tries to get a newsletter with the given name. First it tries to find
@@ -60,6 +61,7 @@ class NewsletterManager(models.Manager):
         except:
             return None
 
+
 class Newsletter(Base):
     """
     A newsletter with subject and content
@@ -67,20 +69,20 @@ class Newsletter(Base):
     """
     name = models.CharField(verbose_name=_("name"), help_text=_("Is only to describe the newsletter."), max_length=100)
     active = models.BooleanField(default=True)
-    newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE,
-        verbose_name=_("Type"), help_text=_("Can only be changed during creation."))
+    newsletter_type = models.IntegerField(choices=settings.NEWSLETTER_TYPE, verbose_name=_("Type"),
+                                          help_text=_("Can only be changed during creation."))
     sender = models.ForeignKey('pennyblack.Sender', verbose_name=_("sender"))
     subject = models.CharField(verbose_name=_("subject"), max_length=250)
-    reply_email = models.EmailField(verbose_name=_("reply-to") ,blank=True)
+    reply_email = models.EmailField(verbose_name=_("reply-to"), blank=True)
     language = models.CharField(max_length=6, verbose_name=_("language"), choices=settings.LANGUAGES)
     header_image = models.ForeignKey('medialibrary.MediaFile', verbose_name=_("header image"))
     header_url = models.URLField()
     header_url_replaced = models.CharField(max_length=250, default='')
-    site = models.ForeignKey('sites.Site', verbose_name=_("site"))    
+    site = models.ForeignKey('sites.Site', verbose_name=_("site"))
     #ga tracking
     utm_source = models.SlugField(verbose_name=_("utm Source"), default="newsletter")
     utm_medium = models.SlugField(verbose_name=_("utm Medium"), default="cpc")
-    
+
     objects = NewsletterManager()
 
     class Meta:
@@ -88,10 +90,10 @@ class Newsletter(Base):
         verbose_name = _("Newsletter")
         verbose_name_plural = _("Newsletters")
         app_label = 'pennyblack'
-            
+
     def __unicode__(self):
         return u'%s %s' % (self.name, self.language)
-    
+
     def is_valid(self):
         """
         Checks if the newsletter is valid. A newsletter needs to have a
@@ -101,7 +103,7 @@ class Newsletter(Base):
             return False
         # todo: check if email is valid
         return True
-    
+
     def create_snapshot(self):
         """
         Makes a copy of itselve with all the content and returns the copy.
@@ -111,10 +113,10 @@ class Newsletter(Base):
         snapshot.save()
         snapshot.copy_content_from(self)
         return snapshot
-        
+
     def get_base_url(self):
         return "http://" + self.site.domain
-        
+
     def replace_links(self, job):
         """
         Searches al links in content sections and replaces them with a link to
@@ -134,10 +136,10 @@ class Newsletter(Base):
         if not is_link(self.header_url, self.header_url_replaced):
             self.header_url_replaced = default_job.add_link(self.header_url)
             self.save()
-        if job.group_object and hasattr(job.group_object,'get_extra_links'):
+        if job.group_object and hasattr(job.group_object, 'get_extra_links'):
             from exceptions import DeprecationWarning
             raise DeprecationWarning("get_extra_links is deprecated and will no longer work")
-        
+
     def prepare_to_send(self):
         """
         Last hook before the newsletter is sent
@@ -146,7 +148,7 @@ class Newsletter(Base):
             for content in cls.objects.filter(parent=self):
                 if hasattr(content, 'prepare_to_send'):
                     content.prepare_to_send()
-    
+
     def get_default_job(self):
         """
         Tries to get the default job. If no default job exists it creates one.
@@ -155,13 +157,13 @@ class Newsletter(Base):
         try:
             return self.jobs.get(content_type=None)
         except models.ObjectDoesNotExist:
-            return self.jobs.create(status=32)            
-    
+            return self.jobs.create(status=32)
+
     def is_workflow(self):
         """
         Returns True if it's type is a workflow newsletter.
         """
-        return self.newsletter_type in settings.NEWSLETTER_TYPE_WORKFLOW 
+        return self.newsletter_type in settings.NEWSLETTER_TYPE_WORKFLOW
 
     def send(self, person, group=None):
         """
@@ -179,10 +181,10 @@ class Newsletter(Base):
                 job = self.jobs.get(content_type=None)
         except models.ObjectDoesNotExist:
             if group:
-                kw = {'group_object':group}
+                kw = {'group_object': group}
             else:
                 kw = {}
-            job=self.jobs.create(status=32, **kw) # 32=readonly
+            job = self.jobs.create(status=32, **kw)  # 32=readonly
         self.replace_links(job)
         self.prepare_to_send()
         mail = job.create_mail(person)
@@ -193,9 +195,9 @@ class Newsletter(Base):
             raise
         else:
             mail.mark_sent()
-    
+
     _view_links = {}
-    
+
     @classmethod
     def register_view_link(cls, identifier, view):
         """
@@ -205,22 +207,23 @@ class Newsletter(Base):
         if identifier in cls._view_links.keys():
             return
         cls._view_links[identifier] = view
-    
+
     @classmethod
-    def add_view_link_to_job(cls, identifier,job):
+    def add_view_link_to_job(cls, identifier, job):
         if identifier not in cls._view_links.keys():
             raise ImproperlyConfigured("no view with identifier '%s' found" % identifier)
         return job.add_link(cls._view_links[identifier], identifier=identifier)
-    
+
     @classmethod
     def get_view_link(cls, identifier):
         if identifier not in cls._view_links.keys():
             raise ImproperlyConfigured("no view with identifier '%s' found" % identifier)
         return cls._view_links[identifier]
-        
-            
-Newsletter.__module__ = 'pennyblack.models'    
+
+
+Newsletter.__module__ = 'pennyblack.models'
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
+
 
 class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
     list_display = ('name', 'subject', 'language', 'newsletter_type')
@@ -230,8 +233,8 @@ class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
             'fields': ['name', 'subject', 'sender', 'reply_email', 'template_key'],
         }),
         (_('Other options'), {
-            'classes': ['collapse',],
-            'fields': ('newsletter_type', 'language', 'utm_source','utm_medium', 'header_image', 'header_url', 'site'),
+            'classes': ['collapse'],
+            'fields': ('newsletter_type', 'language', 'utm_source', 'utm_medium', 'header_image', 'header_url', 'site'),
         }),
         item_editor.FEINCMS_CONTENT_FIELDSET,
     )

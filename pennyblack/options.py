@@ -31,7 +31,7 @@ class JobUnitMixin(object):
         Creates a newsletter for every NewsletterReceiverMixin
         """
         from pennyblack.models.job import Job
-        if form_data == None:
+        if form_data is None:
             collection_name = 'Default'
             queryset = self.get_receiver_queryset()
         else:
@@ -81,14 +81,14 @@ class JobUnitAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(reverse('admin:pennyblack_job_change', args=(job.id,)))
         if request.method == 'POST':
             form = self.collection_select_form(data=request.POST,
-                group_object=obj,
-                extra_fields=self.collection_selection_form_extra_fields)
+                                               group_object=obj,
+                                               extra_fields=self.collection_selection_form_extra_fields)
             if form.is_valid():
                 job = obj.create_newsletter(form_data=form.cleaned_data)
                 return HttpResponseRedirect(reverse('admin:pennyblack_job_change', args=(job.id,)))
         else:
             form = self.collection_select_form(group_object=obj,
-                extra_fields=self.collection_selection_form_extra_fields)
+                                               extra_fields=self.collection_selection_form_extra_fields)
         info = self.model._meta.app_label, self.model._meta.module_name
         context = {
             'opts': self.model._meta,

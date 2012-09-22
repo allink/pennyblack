@@ -20,7 +20,7 @@ except IOError:
 except ImportError:
     # spf missing
     ENABLE_SPF = False
-    
+
 
 #-----------------------------------------------------------------------------
 # Sender
@@ -37,27 +37,27 @@ class Sender(models.Model):
     imap_port = models.IntegerField(verbose_name=_("imap port"), max_length=100, default=143)
     imap_ssl = models.BooleanField(verbose_name=_("use ssl"), default=False)
     get_bounce_emails = models.BooleanField(verbose_name=_("get bounce e-mails"), default=False)
-    
+
     class Meta:
         verbose_name = _('sender')
         verbose_name_plural = _('senders')
         app_label = 'pennyblack'
-    
+
     def __unicode__(self):
         return self.email
-    
+
     def check_spf(self):
         """
         Check if sender is authorised by sender policy framework
         """
         if not ENABLE_SPF:
             return False
-        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()),s=self.email,h=DNS_NAME.get_fqdn())
-    
+        return spf.check(i=socket.gethostbyname(DNS_NAME.get_fqdn()), s=self.email, h=DNS_NAME.get_fqdn())
+
     def spf_result(self):
         return self.check_spf()
     check_spf.short_description = "spf Result"
-    
+
     def get_mail(self):
         """
         Checks the inbox of this sender and prcesses the bounced emails
@@ -65,7 +65,7 @@ class Sender(models.Model):
         from pennyblack.models import Mail
         if not settings.BOUNCE_DETECTION_ENABLE:
             return
-        oldest_date = datetime.datetime.now()-datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
+        oldest_date = datetime.datetime.now() - datetime.timedelta(days=settings.BOUNCE_DETECTION_DAYS_TO_LOOK_BACK)
         try:
             if self.imap_ssl:
                 ssl_class = imaplib.IMAP4_SSL
@@ -90,16 +90,16 @@ class Sender(models.Model):
                     # ping all newsletter receivers
                     for mail in mailquery:
                         mail.bounce()
-                if conn.copy(num,settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
+                if conn.copy(num, settings.BOUNCE_DETECTION_BOUNCE_EMAIL_FOLDER)[0] == 'OK':
                     conn.store(num, '+FLAGS', r'\Deleted')
             conn.expunge()
             conn.close()
             conn.logout()
-        except imaplib.IMAP4.error, e:
+        except imaplib.IMAP4.error:
             return
-        
+
+
 class SenderAdmin(admin.ModelAdmin):
     list_display = ('email', 'name',)
     fields = ('email', 'name', 'imap_username', 'imap_password', 'imap_server', 'imap_port', 'imap_ssl', 'get_bounce_emails', 'spf_result',)
     readonly_fields = ('spf_result',)
-

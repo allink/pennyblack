@@ -25,8 +25,7 @@ def newsletterstyle(parser, token):
     """
     bits = list(token.split_contents())
     if len(bits) != 3:
-        raise template.TemplateSyntaxError("%r expected format is 'newsletterstyle request stylename'" %
-            bits[0])
+        raise template.TemplateSyntaxError("%r expected format is 'newsletterstyle request stylename'" % bits[0])
     request = bits[1]
     key = parser.compile_filter(bits[2])
     style = parser.parse(('endnewsletterstyle',))
@@ -55,8 +54,7 @@ def get_newsletterstyle(parser, token):
     """
     bits = list(token.split_contents())
     if len(bits) != 3:
-        raise template.TemplateSyntaxError("%r expected format is 'newsletterstyle request stylename'" %
-            bits[0])
+        raise template.TemplateSyntaxError("%r expected format is 'newsletterstyle request stylename'" % bits[0])
     request = bits[1]
     key = parser.compile_filter(bits[2])
     return NewsletterGetStyleNode(key, request)
@@ -131,8 +129,7 @@ def link_url(parser, token):
     """
     bits = list(token.split_contents())
     if len(bits) != 2:
-        raise template.TemplateSyntaxError("%r expected format is 'link_url url_identifier'" %
-            bits[0])
+        raise template.TemplateSyntaxError("%r expected format is 'link_url url_identifier'" % bits[0])
     return NewsletterLinkUrlNode(identifier=bits[1])
 
 
