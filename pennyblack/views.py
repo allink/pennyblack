@@ -1,3 +1,7 @@
+import types
+from urlparse import urlparse, urlunparse, parse_qs
+from urllib import urlencode
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
@@ -7,8 +11,6 @@ from django.template import RequestContext
 from django.utils.functional import wraps
 
 from pennyblack.models import Newsletter, Link, Mail, Job
-
-import types
 
 
 def needs_mail(function):
@@ -63,19 +65,26 @@ def preview(request, newsletter_id):
 @needs_link
 def redirect_link(request, mail, link):
     """
-    Redirects to the link target and marks this mail as read
+    Redirects to the link target and marks this mail as read. If the link
+    belongs to a proxy view it redirects it to the proxy view url.
     """
     mail.on_landing(request)
     target = link.click(mail)
     if isinstance(target, types.FunctionType):
         return HttpResponseRedirect(reverse('pennyblack.proxy', args=(mail.mail_hash, link.link_hash)))
-    ga_tracking = "utm_source=%s&utm_medium=%s&utm_campaign=%s" % (
-        mail.job.newsletter.utm_source, mail.job.newsletter.utm_medium,
-        mail.job.utm_campaign)
-    if target.find('?') > 0:
-        target = '%s&%s' % (target, ga_tracking)
-    else:
-        target = '%s?%s' % (target, ga_tracking)
+    # disassemble the url
+    scheme, netloc, path, params, query, fragment = tuple(urlparse(target))
+    if scheme in ('http', 'https'):  # insert ga tracking if scheme is appropriate
+        parsed_query = parse_qs(query)
+        if mail.job.newsletter.utm_source:
+            parsed_query['utm_source'] = mail.job.newsletter.utm_source
+        if mail.job.newsletter.utm_medium:
+            parsed_query['utm_medium'] = mail.job.newsletter.utm_medium
+        if mail.job.utm_campaign:
+            parsed_query['utm_campaign'] = mail.job.utm_campaign
+        query = urlencode(parsed_query, True)
+    # reassemble the url
+    target = urlunparse((scheme, netloc, path, params, query, fragment))
     response = HttpResponseRedirect(target)
     try:
         response.allowed_schemes = response.allowed_schemes + ['mailto']
