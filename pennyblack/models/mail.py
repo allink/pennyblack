@@ -1,3 +1,7 @@
+import hashlib
+import random
+from rfc822 import dump_address_pair
+
 from django.contrib import admin
 from django.contrib.contenttypes import generic
 from django.core import mail
@@ -7,11 +11,13 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.template import RequestContext
 
-import datetime
-import hashlib
-import random
-
 from pennyblack import settings
+
+try:
+    from django.utils.timezone import now
+except ImportError:
+    from datetime import datetime
+    now = datetime.now()
 
 
 #-----------------------------------------------------------------------------
@@ -57,7 +63,7 @@ class Mail(models.Model):
         stores the view date.
         """
         if not self.viewed:
-            self.viewed = datetime.datetime.now()
+            self.viewed = now()
             self.save()
 
     def on_landing(self, request):
@@ -116,7 +122,7 @@ class Mail(models.Model):
         message = mail.EmailMessage(
             self.job.newsletter.subject,
             self.get_content(),
-            '"%s" <%s>' % (self.job.newsletter.sender.name.replace('"', '\\"'), self.job.newsletter.sender.email),
+            dump_address_pair((self.job.newsletter.sender.name, self.job.newsletter.sender.email)),
             [self.email],
             headers=headers,
         )
