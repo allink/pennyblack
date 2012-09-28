@@ -76,7 +76,12 @@ def redirect_link(request, mail, link):
         target = '%s&%s' % (target, ga_tracking)
     else:
         target = '%s?%s' % (target, ga_tracking)
-    return HttpResponseRedirect(target)
+    response = HttpResponseRedirect(target)
+    try:
+        response.allowed_schemes = response.allowed_schemes + ['mailto']
+    except AttributeError:
+        pass
+    return response
 
 
 @needs_mail
