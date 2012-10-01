@@ -10,7 +10,6 @@ from django.db.models import signals
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
-from feincms.admin import editor
 from feincms.admin import item_editor
 from feincms.management.checker import check_database_schema
 from feincms.models import Base
@@ -225,7 +224,7 @@ Newsletter.__module__ = 'pennyblack.models'
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 
-class NewsletterAdmin(editor.ItemEditor, admin.ModelAdmin):
+class NewsletterAdmin(item_editor.ItemEditor, admin.ModelAdmin):
     list_display = ('name', 'subject', 'language', 'newsletter_type')
     raw_id_fields = ('header_image',)
     fieldsets = (
