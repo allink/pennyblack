@@ -224,6 +224,13 @@ Newsletter.__module__ = 'pennyblack.models'
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 
+def copy_newsletters(modeladmin, request, queryset):
+    for newsletter in queryset:
+        duplicate = copy_model_instance(newsletter, exclude=('id',))
+        duplicate.save()
+        duplicate.copy_content_from(newsletter)
+copy_newsletters.short_description = _('Duplicate selected newsletters')
+
 class NewsletterAdmin(item_editor.ItemEditor, admin.ModelAdmin):
     list_display = ('name', 'subject', 'language', 'newsletter_type')
     raw_id_fields = ('header_image',)
@@ -238,6 +245,7 @@ class NewsletterAdmin(item_editor.ItemEditor, admin.ModelAdmin):
         item_editor.FEINCMS_CONTENT_FIELDSET,
     )
     exclude = ('header_url_replaced',)
+    actions = [copy_newsletters]
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
