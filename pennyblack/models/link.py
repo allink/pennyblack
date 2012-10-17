@@ -46,15 +46,23 @@ def check_if_redirect_url(url):
 
 
 class Link(models.Model):
+    """
+    Stores a link from a newsletter and generates a hash corresponding to the link.
+
+    If there is a identifier set, then the link belongs to a view which is presented
+    to the receiver via the proxy view. These links don't have a link_target.
+    """
     job = models.ForeignKey('pennyblack.Job', related_name='links')
     identifier = models.CharField(max_length=100, default='')
-    link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), db_index=True, blank=True)
+    link_hash = models.CharField(max_length=32, verbose_name=_("link hash"), unique=True, blank=True)
     link_target = models.CharField(verbose_name=_("address"), max_length=500, default='')
+    token = models.CharField(max_length=32, null=True)
 
     class Meta:
         verbose_name = _('link')
         verbose_name_plural = _('links')
         app_label = 'pennyblack'
+        unique_together = (('job', 'token'))
 
     def __unicode__(self):
         return self.link_target
@@ -90,6 +98,9 @@ class Link(models.Model):
 
 
 class LinkClick(models.Model):
+    """
+    Stores a click on a link.
+    """
     link = models.ForeignKey('pennyblack.Link', related_name='clicks')
     mail = models.ForeignKey('pennyblack.Mail', related_name='clicks')
     date = models.DateTimeField(default=datetime.datetime.now())

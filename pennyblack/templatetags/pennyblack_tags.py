@@ -1,5 +1,9 @@
+import hashlib
+
 from django import template
 from django.core.urlresolvers import reverse
+
+from pennyblack.models import Link
 
 register = template.Library()
 
@@ -155,3 +159,48 @@ def content_image_url(parser, token):
     if len(bits) == 2:
         return ContentImageUrlNode(identifier=bits[1])
     return ContentImageUrlNode()
+
+
+class LinkTagNode(template.Node):
+    def __init__(self, target, token):
+        self.target = target
+        self.token = token
+
+    def render(self, context):
+        if isinstance(self.token, template.Variable):
+            self.token = self.token.resolve(context)
+        target = self.target.resolve(context)
+        if 'mail' not in context:
+            return "%s %s " % (target, self.token)
+        mail = context['mail']
+        link, created = Link.objects.get_or_create(token=self.token, job=mail.job)
+        if created:
+            link.link_target = target
+            link.save()
+        return context['base_url'] + reverse('pennyblack.redirect_link', args=(mail.mail_hash, link.link_hash))
+
+
+@register.tag
+def trackable_link(parser, token):
+    """
+    Renders a url that can be used to track links in a template outside the
+    content types. Multiple links can be grouped together by giving a third
+    parameter which identifies the link. This makes it possible to group links
+    like in the following example:
+    {% if random %}
+        <a href="{% trackable_link 'https://github.com/allink/pennyblack' 'aaaaaaaaaa' %}" class="special">link</a>
+    {% else %}
+        <a href="{% trackable_link 'https://github.com/allink/pennyblack' 'aaaaaaaaaa' %}">link</a>
+    {% endif %}
+    The target link can contain template variables in the following form:
+    <a href="{% trackable_link '{{base_url}}' 'aaaaaaaaaa' %}">link</a>
+    """
+    bits = list(token.split_contents())
+    if not 2 <= len(bits) <= 3:
+        raise template.TemplateSyntaxError("%r expected format is 'tackable_link 'http://target_url''" % bits[0])
+    if len(bits) == 2:
+        template_loader, (position_start, position_end) = parser.command_stack[0][-1]
+        link_token = hashlib.md5("%s%s" % (template_loader.loadname, position_start)).hexdigest()
+    else:
+        link_token = template.Variable(bits[2])
+    return LinkTagNode(template.Variable(bits[1]), link_token)
