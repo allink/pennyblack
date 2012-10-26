@@ -164,7 +164,7 @@ class Newsletter(Base):
         """
         return self.newsletter_type in settings.NEWSLETTER_TYPE_WORKFLOW
 
-    def send(self, person, group=None):
+    def send(self, person, group=None, extra_context=None):
         """
         Sends this newsletter to "person" with optional "group".
         This works only with newsletters which are workflow newsletters.
@@ -187,6 +187,7 @@ class Newsletter(Base):
         self.replace_links(job)
         self.prepare_to_send()
         mail = job.create_mail(person)
+        mail.extra_context = extra_context
         try:
             message = mail.get_message()
             message.send()
