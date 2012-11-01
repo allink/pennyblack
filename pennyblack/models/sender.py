@@ -32,7 +32,7 @@ class Sender(models.Model):
     email = models.EmailField(verbose_name=_("from e-mail address"))
     name = models.CharField(verbose_name=_("from name"), help_text=_("many e-mail clients show this as from."), max_length=100)
     imap_username = models.CharField(verbose_name=_("imap username"), max_length=100, blank=True)
-    imap_password = models.CharField(verbose_name=_("imap passwort"), max_length=100, blank=True)
+    imap_password = models.CharField(verbose_name=_("imap password"), max_length=100, blank=True)
     imap_server = models.CharField(verbose_name=_("imap server"), max_length=100, blank=True)
     imap_port = models.IntegerField(verbose_name=_("imap port"), max_length=100, default=143)
     imap_ssl = models.BooleanField(verbose_name=_("use ssl"), default=False)
