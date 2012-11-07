@@ -42,6 +42,10 @@ class Mail(models.Model):
         verbose_name_plural = 'mails'
         app_label = 'pennyblack'
 
+    def __init__(self, *args, **kwargs):
+        super(Mail, self).__init__(*args, **kwargs)
+        self.extra_context = None
+
     def __unicode__(self):
         return u'%s to %s' % (self.job, self.person,)
 
@@ -138,6 +142,8 @@ class Mail(models.Model):
         context = self.get_context()
         context['newsletter'] = newsletter
         context['webview'] = webview
+        if isinstance(self.extra_context, dict):
+            context.update(self.extra_context)
         request = HttpRequest()
         request.content_context = context
         return render_to_string(newsletter.template.path, context,
