@@ -22,13 +22,13 @@ class NewsletterSectionAdminForm(RichTextContentAdminForm):
     def clean(self):
         cleaned_data = super(NewsletterSectionAdminForm, self).clean()
         try:
-            Template(cleaned_data['text'])
+            Template("{%%load pennyblack_tags %%}%s" % cleaned_data['text'])
         except TemplateSyntaxError, e:
             self._errors["text"] = ErrorList([e])
         except exceptions.KeyError:
             pass
         try:
-            Template(cleaned_data['title'])
+            Template("{%%load pennyblack_tags %%}%s" % cleaned_data['title'])
         except TemplateSyntaxError, e:
             self._errors["title"] = ErrorList([e])
         except exceptions.KeyError:
