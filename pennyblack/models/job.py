@@ -16,6 +16,13 @@ from pennyblack import settings
 
 import datetime
 
+try:
+    from django.utils import timezone
+except ImportError:
+    now = datetime.datetime.now
+else:
+    now = timezone.now
+
 
 #-----------------------------------------------------------------------------
 # Job
@@ -24,7 +31,7 @@ class Job(models.Model):
     """A bunch of participants wich receive a newsletter"""
     newsletter = models.ForeignKey('pennyblack.Newsletter', related_name="jobs", null=True)
     status = models.IntegerField(choices=settings.JOB_STATUS, default=1)
-    date_created = models.DateTimeField(verbose_name=_("created"), default=datetime.datetime.now())
+    date_created = models.DateTimeField(verbose_name=_("created"), default=now)
     date_deliver_start = models.DateTimeField(blank=True, null=True, verbose_name=_("started delivering"), default=None)
     date_deliver_finished = models.DateTimeField(blank=True, null=True, verbose_name=_("finished delivering"), default=None)
 
@@ -179,7 +186,7 @@ class Job(models.Model):
         self.newsletter.replace_links(self)
         self.newsletter.prepare_to_send()
         self.status = 21
-        self.date_deliver_start = datetime.datetime.now()
+        self.date_deliver_start = now()
         self.save()
         try:
             translation.activate(self.newsletter.language)
@@ -194,7 +201,7 @@ class Job(models.Model):
             raise
         else:
             self.status = 31
-            self.date_deliver_finished = datetime.datetime.now()
+            self.date_deliver_finished = now()
         self.save()
 
 
@@ -300,18 +307,12 @@ class JobStatisticAdmin(admin.ModelAdmin):
 
     def get_graph_data(self, obj):
         date_start = obj.date_deliver_start.replace(minute=0, second=0, microsecond=0)
-        try:
-            from django.utils import timezone
-        except ImportError:
-            now = datetime.datetime.now()
-        else:
-            now = timezone.now()
         opened_serie = []
         for i in range(336):
             t = date_start + datetime.timedelta(hours=i)
             count_opened = obj.mails.exclude(viewed=None).filter(viewed__lt=t).count()
             opened_serie.append('[%s000,%s]' % (t.strftime('%s'), count_opened))
-            if t > now:
+            if t > now():
                 break
         return {
             'opened_serie': ','.join(opened_serie),
