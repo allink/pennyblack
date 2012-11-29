@@ -6,8 +6,6 @@ from django.shortcuts import get_object_or_404, render_to_response
 
 from pennyblack.forms import CollectionSelectForm
 
-import exceptions
-
 
 class NewsletterReceiverMixin(object):
     """
@@ -16,10 +14,13 @@ class NewsletterReceiverMixin(object):
     def get_email(self):
         if hasattr(self, 'email'):
             return self.email
-        raise exceptions.NotImplementedError('Need a get_email implementation.')
+        raise NotImplementedError('Need a get_email implementation.')
 
     def on_bounce(self, mail):
         pass
+
+    def get_unsubscribe_url(self, mail=None, job=None, newsletter=None):
+        raise NotImplementedError('get_unsubscribe_url ist not implemented')
 
 
 class JobUnitMixin(object):
@@ -50,10 +51,10 @@ class JobUnitMixin(object):
         {} is used to filter the queryset when evaluating the
         get_receiver_filtered_queryset function.
         """
-        raise exceptions.NotImplementedError("Override this method in your class!")
+        raise NotImplementedError("Override this method in your class!")
 
     def get_receiver_queryset(self):
-        raise exceptions.NotImplementedError("Override this method in your class!")
+        raise NotImplementedError("Override this method in your class!")
 
     def get_receiver_filtered_queryset(self, **kwargs):
         """

@@ -119,14 +119,20 @@ class Mail(models.Model):
         Returns a email message object
         """
         self.email = self.person.get_email()
-        if self.job.newsletter.reply_email != '':
-            headers = {'Reply-To': self.job.newsletter.reply_email}
-        else:
-            headers = {}
+        job = self.job
+        headers = {}
+        if job.newsletter.reply_email != '':
+            headers.update({'Reply-To': job.newsletter.reply_email})
+        if job.newsletter.newsletter_type == settings.NEWSLETTER_TYPE_MASSMAIL:
+            headers.update({'Precedence': 'bulk'})
+        try:
+            headers.update({'List-Unsubscribe': self.person.get_unsubscribe_url(mail=self, job=job, newsletter=job.newsletter)})
+        except NotImplementedError:
+            pass
         message = mail.EmailMessage(
-            self.job.newsletter.subject,
+            job.newsletter.subject,
             self.get_content(),
-            dump_address_pair((self.job.newsletter.sender.name, self.job.newsletter.sender.email)),
+            dump_address_pair((job.newsletter.sender.name, job.newsletter.sender.email)),
             [self.email],
             headers=headers,
         )
