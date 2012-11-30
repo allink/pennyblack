@@ -9,6 +9,9 @@ NEWSLETTER_TYPE = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE', ((1, 'Massmail'
 NEWSLETTER_TYPE_MASSMAIL = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE_MASSMAIL', (1,))
 NEWSLETTER_TYPE_WORKFLOW = getattr(settings, 'PENNYPLACK_NEWLETTER_TYPE_WORKFLOW', (2,))
 
+# hide attachments by default
+NEWSLETTER_SHOW_ATTACHMENTS = getattr(settings, 'PENNYBLACK_NEWSLETTER_SHOW_ATTACHMENTS', False)
+
 JOB_STATUS = getattr(settings, 'PENNYBLACK_JOB_STATUS', ((1, 'Draft'), (11, 'Pending'), (21, 'Sending'), (31, 'Finished'), (41, 'Error'), (42, 'Timeout (will retry)'), (32, 'ReadOnly')))
 
 JOB_STATUS_CAN_SEND = getattr(settings, 'PENNYBLACK_JOB_STATUS_CAN_SEND', (1, 41))

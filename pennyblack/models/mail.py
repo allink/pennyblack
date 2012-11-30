@@ -136,6 +136,8 @@ class Mail(models.Model):
             [self.email],
             headers=headers,
         )
+        for attachment in job.newsletter.attachments.all():
+            message.attachments.append((attachment.name, attachment.file.read(), attachment.mimetype))
         message.content_subtype = "html"
         return message
 

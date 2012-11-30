@@ -1,12 +1,15 @@
 # coding=utf-8
-import exceptions
+import mimetypes
+import os
 
 from django.conf.urls.defaults import patterns, url
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import signals
+from django import forms
 from django.utils import translation
 from django.utils.translation import ugettext_lazy as _
 
@@ -111,6 +114,10 @@ class Newsletter(Base):
         snapshot.active = False
         snapshot.save()
         snapshot.copy_content_from(self)
+        for attachment in self.attachments.all():
+            attachment_copy = copy_model_instance(attachment, exclude=('id', 'newsletter'))
+            attachment_copy.newsletter = snapshot
+            attachment_copy.save()
         return snapshot
 
     def get_base_url(self):
@@ -136,7 +143,6 @@ class Newsletter(Base):
             self.header_url_replaced = default_job.add_link(self.header_url)
             self.save()
         if job.group_object and hasattr(job.group_object, 'get_extra_links'):
-            from exceptions import DeprecationWarning
             raise DeprecationWarning("get_extra_links is deprecated and will no longer work")
 
     def prepare_to_send(self):
@@ -170,7 +176,7 @@ class Newsletter(Base):
         This works only with newsletters which are workflow newsletters.
         """
         if not self.is_workflow():
-            raise exceptions.AttributeError('only newsletters with type workflow can be sent')
+            raise AttributeError('only newsletters with type workflow can be sent')
         # search newsletter job wich hash the same group or create it if it doesn't exist
         try:
             if group:
@@ -225,12 +231,53 @@ Newsletter.__module__ = 'pennyblack.models'
 signals.post_syncdb.connect(check_database_schema(Newsletter, __name__), weak=False)
 
 
+class Attachment(models.Model):
+    newsletter = models.ForeignKey(Newsletter, related_name='attachments')
+    file = models.FileField(upload_to='newsletter/attachments', verbose_name=_(u'File'))
+    name = models.CharField(max_length=100, verbose_name=_(u'Filename'), blank=True)
+    mimetype = models.CharField(max_length=20, blank=True)
+    size = models.PositiveIntegerField(default=0)
+
+    def __unicode__(self):
+        return "%s (%s)" % (self.name, self.size)
+
+    class Meta:
+        verbose_name = _(u'attachment')
+        verbose_name_plural = _(u'attachments')
+        app_label = 'pennyblack'
+
+
+class AttachmentAdminForm(forms.ModelForm):
+    def clean(self):
+        cleaned_data = super(AttachmentAdminForm, self).clean()
+        if 'file' in cleaned_data and isinstance(cleaned_data['file'], InMemoryUploadedFile):
+            cleaned_data['name'] = cleaned_data['name'] or cleaned_data['file'].name
+        return cleaned_data
+
+    def save(self, **kwargs):
+        filename = self.instance.name
+        mimetype, format = mimetypes.guess_type(filename)
+        if not mimetype:
+            raise forms.ValidationError(_(u'Mimetype of file could not be guessed.'))
+        self.instance.mimetype = mimetype
+        self.instance.size = self.instance.file.size
+        return super(AttachmentAdminForm, self).save(**kwargs)
+
+
+class AttachmentInline(admin.TabularInline):
+    model = Attachment
+    form = AttachmentAdminForm
+    readonly_fields = ('mimetype', 'size')
+    extra = 0
+
+
 def copy_newsletters(modeladmin, request, queryset):
     for newsletter in queryset:
         duplicate = copy_model_instance(newsletter, exclude=('id',))
         duplicate.save()
         duplicate.copy_content_from(newsletter)
 copy_newsletters.short_description = _('Duplicate selected newsletters')
+
 
 class NewsletterAdmin(item_editor.ItemEditor, admin.ModelAdmin):
     list_display = ('name', 'subject', 'language', 'newsletter_type')
@@ -247,6 +294,9 @@ class NewsletterAdmin(item_editor.ItemEditor, admin.ModelAdmin):
     )
     exclude = ('header_url_replaced',)
     actions = [copy_newsletters]
+    inlines = []
+    if settings.NEWSLETTER_SHOW_ATTACHMENTS:
+        inlines.append(AttachmentInline)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -259,6 +309,6 @@ class NewsletterAdmin(item_editor.ItemEditor, admin.ModelAdmin):
     def get_urls(self):
         urls = super(NewsletterAdmin, self).get_urls()
         my_urls = patterns('',
-            (r'^(?P<newsletter_id>\d+)/preview/$', 'pennyblack.views.preview')
+            url(r'^(?P<newsletter_id>\d+)/preview/$', 'pennyblack.views.preview'),
         )
         return my_urls + urls
