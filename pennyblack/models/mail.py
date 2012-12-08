@@ -126,7 +126,7 @@ class Mail(models.Model):
         if job.newsletter.newsletter_type == settings.NEWSLETTER_TYPE_MASSMAIL:
             headers.update({'Precedence': 'bulk'})
         try:
-            headers.update({'List-Unsubscribe': self.person.get_unsubscribe_url(mail=self, job=job, newsletter=job.newsletter)})
+            headers.update({'List-Unsubscribe': "<%s>" % self.person.get_unsubscribe_url(mail=self, job=job, newsletter=job.newsletter)})
         except NotImplementedError:
             pass
         message = mail.EmailMessage(
