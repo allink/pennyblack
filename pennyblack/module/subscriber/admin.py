@@ -8,7 +8,7 @@ admin.site.register(SubscriberGroup, SubscriberGroupAdmin)
 
 try:
     from admin_import.options import add_import
-except ImportError as e:
+except ImportError, e:
     if not str(e) == 'No module named admin_import.options':
         raise
 else:
