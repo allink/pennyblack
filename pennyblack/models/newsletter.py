@@ -170,10 +170,12 @@ class Newsletter(Base):
         """
         return self.newsletter_type in settings.NEWSLETTER_TYPE_WORKFLOW
 
-    def send(self, person, group=None, extra_context=None):
+    def send(self, person, group=None, extra_context=None, extra_attachments=None):
         """
         Sends this newsletter to "person" with optional "group".
         This works only with newsletters which are workflow newsletters.
+        extra_context has to be a dict of additional context data if defined
+        extra_attachments has to be a list of tuples (filename, content, mimetype) if defined
         """
         if not self.is_workflow():
             raise AttributeError('only newsletters with type workflow can be sent')
@@ -194,6 +196,8 @@ class Newsletter(Base):
         self.prepare_to_send()
         mail = job.create_mail(person)
         mail.extra_context = extra_context
+        if extra_attachments:
+            mail.extra_attachments.extend(extra_attachments)
         try:
             message = mail.get_message()
             message.send()

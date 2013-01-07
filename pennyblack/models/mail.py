@@ -45,6 +45,7 @@ class Mail(models.Model):
     def __init__(self, *args, **kwargs):
         super(Mail, self).__init__(*args, **kwargs)
         self.extra_context = None
+        self.extra_attachments = []
 
     def __unicode__(self):
         return u'%s to %s' % (self.job, self.person,)
@@ -138,6 +139,8 @@ class Mail(models.Model):
         )
         for attachment in job.newsletter.attachments.all():
             message.attachments.append((attachment.name, attachment.file.read(), attachment.mimetype))
+        for attachment in self.extra_attachments:
+            message.attachments.append(attachment)
         message.content_subtype = "html"
         return message
 
