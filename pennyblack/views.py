@@ -95,13 +95,13 @@ def redirect_link(request, mail, link):
 
 @needs_mail
 def ping(request, mail, filename):
-    mail.mark_viewed()
+    mail.mark_viewed(request)
     return HttpResponseRedirect(mail.job.newsletter.header_image.get_absolute_url())
 
 
 @needs_mail
 def view(request, mail):
-    mail.mark_viewed()
+    mail.mark_viewed(request)
     return HttpResponse(mail.get_content(webview=True))
 
 

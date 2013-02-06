@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+     <a href="../../../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="../../../">{{ app_label|capfirst|escape }}</a> &rsaquo;
+     <a href="../../">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+     <a href="../">{{ object|truncatewords:"18" }}</a> &rsaquo;
+     {% trans "e-mail list"|capfirst %}
+</div>
+{% endblock %}
+
+{% block content %}
+    <h2>{% trans "user agents"|capfirst %}</h2>
+    <table border="0">
+        <tr>
+        	<th>{% trans "description"|capfirst %}</th>
+        	<th>{% trans "count"|capfirst %}</th>
+        </tr>
+        {% for user_agent in user_agents %}
+        	<tr>
+        		<td>{{user_agent.user_agent}}</td>
+        		<td>{{user_agent.count}}</td>
+        	</tr>
+        {% endfor %}
+    </table>
+{% endblock %}

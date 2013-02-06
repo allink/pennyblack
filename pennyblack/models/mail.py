@@ -5,6 +5,7 @@ from rfc822 import dump_address_pair
 from django.contrib import admin
 from django.contrib.contenttypes import generic
 from django.core import mail
+from django.core.urlresolvers import NoReverseMatch, reverse
 from django.core.validators import email_re
 from django.db import models
 from django.http import HttpRequest
@@ -19,10 +20,19 @@ except ImportError:
     from datetime import datetime
     now = datetime.now
 
+from datetime import timedelta
+
 
 #-----------------------------------------------------------------------------
 # Mail
 #-----------------------------------------------------------------------------
+class MailManager(models.Manager):
+    use_for_related_fields = True
+
+    def most_clicked_first(self):
+        return self.annotate(click_count=models.Count('clicks')).order_by('-click_count')
+
+
 class Mail(models.Model):
     """
     This is a single Mail, it's part of a Job
@@ -36,6 +46,8 @@ class Mail(models.Model):
     job = models.ForeignKey('pennyblack.Job', related_name="mails")
     mail_hash = models.CharField(max_length=32, blank=True)
     email = models.EmailField()  # the address is stored when the mail is sent
+
+    objects = MailManager()
 
     class Meta:
         verbose_name = 'mail'
@@ -62,11 +74,20 @@ class Mail(models.Model):
         self.sent = True
         self.save()
 
-    def mark_viewed(self):
+    def mark_viewed(self, request=None):
         """
         Marks the email as beeing viewed and if it's not already viewed it
         stores the view date.
         """
+        if request:
+            params = {
+                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+                'ip_address': request.META.get('REMOTE_ADDR', ''),
+                'referer': request.META.get('HTTP_REFERER', ''),
+            }
+            t = now() - timedelta(hours=1)
+            if not self.clients.filter(**params).filter(visited__gt=t):
+                self.clients.create(**params)
         if not self.viewed:
             self.viewed = now()
             self.save()
@@ -77,7 +98,7 @@ class Mail(models.Model):
         a link in this email. It tries to execute the on_landing method on the
         person object and on the group object.
         """
-        self.mark_viewed()
+        self.mark_viewed(request)
         if hasattr(self.person, 'on_landing') and hasattr(self.person.on_landing, '__call__'):
             self.person.on_landing(request)
         if self.job.content_type is not None and \
@@ -176,6 +197,16 @@ class Mail(models.Model):
         Gets the header url for this email.
         """
         return self.job.newsletter.header_url_replaced.replace('{{mail.mail_hash}}', self.mail_hash).replace('{{base_url}}', self.job.newsletter.get_base_url())
+
+    @property
+    def admin_change_url(self):
+        if hasattr(self, '_admin_change_url'):
+            return self._admin_change_url
+        try:
+            self._admin_change_url = reverse('admin:%s_%s_change' % (self.content_type.app_label, self.content_type.model), args=[self.object_id])
+        except NoReverseMatch:
+            return None
+        return self._admin_change_url
 
 
 class MailInline(admin.TabularInline):

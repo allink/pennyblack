@@ -205,6 +205,14 @@ class Job(models.Model):
         self.save()
 
 
+class JobStatistic(Job):
+    class Meta:
+        proxy = True
+        verbose_name = _("statistic")
+        verbose_name_plural = _("statistics")
+        app_label = 'pennyblack'
+
+
 class JobAdminForm(forms.ModelForm):
     from pennyblack.models.newsletter import Newsletter
     newsletter = forms.ModelChoiceField(queryset=Newsletter.objects.massmail())
@@ -277,17 +285,6 @@ class JobAdmin(admin.ModelAdmin):
         return False
 
 
-#-----------------------------------------------------------------------------
-# Job
-#-----------------------------------------------------------------------------
-class JobStatistic(Job):
-    class Meta:
-        proxy = True
-        verbose_name = _("statistic")
-        verbose_name_plural = _("statistics")
-        app_label = 'pennyblack'
-
-
 class JobStatisticAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_deliver_start'
     actions = None
@@ -323,3 +320,35 @@ class JobStatisticAdmin(admin.ModelAdmin):
         graph_data = self.get_graph_data(obj)
         extra_context.update(graph_data)
         return super(JobStatisticAdmin, self).change_view(request, object_id, extra_context=extra_context)
+
+    def email_list_view(self, request, object_id):
+        obj = self.get_object(request, unquote(object_id))
+        context = {
+            'object': obj,
+            'opts': self.model._meta,
+            'app_label': self.model._meta.app_label,
+        }
+
+        return render_to_response('admin/pennyblack/jobstatistic/email_list.html', context)
+
+    def user_agents_view(self, request, object_id):
+        from pennyblack.models import EmailClient
+        obj = self.get_object(request, unquote(object_id))
+        user_agents = EmailClient.objects.filter(mail__job_id=obj.id).values('user_agent').annotate(count=models.Count('user_agent')).order_by('-count')
+        context = {
+            'object': obj,
+            'opts': self.model._meta,
+            'app_label': self.model._meta.app_label,
+            'user_agents': user_agents
+        }
+
+        return render_to_response('admin/pennyblack/jobstatistic/user_agents.html', context)
+
+    def get_urls(self):
+        urls = super(JobStatisticAdmin, self).get_urls()
+        info = self.model._meta.app_label, self.model._meta.module_name
+        my_urls = patterns('',
+            url(r'^(?P<object_id>\d+)/email-list/$', self.admin_site.admin_view(self.email_list_view), name='%s_%s_email_list' % info),
+            url(r'^(?P<object_id>\d+)/user-agents/$', self.admin_site.admin_view(self.user_agents_view), name='%s_%s_user_agents' % info),
+        )
+        return my_urls + urls
