@@ -4,6 +4,7 @@ http://user-agent-string.info/
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+import datetime
 try:
     from django.utils import timezone
 except ImportError:
