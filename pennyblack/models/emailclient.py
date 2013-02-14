@@ -22,6 +22,7 @@ class EmailClient(models.Model):
     referer = models.CharField(max_length=1023, blank=True)
     ip_address = models.IPAddressField()
     visited = models.DateTimeField(default=now)
+    contact_type = models.CharField(max_length=15, default='')
 
     class Meta:
         verbose_name = _('email client')

@@ -74,7 +74,7 @@ class Mail(models.Model):
         self.sent = True
         self.save()
 
-    def mark_viewed(self, request=None):
+    def mark_viewed(self, request=None, contact_type='link'):
         """
         Marks the email as beeing viewed and if it's not already viewed it
         stores the view date.
@@ -84,6 +84,7 @@ class Mail(models.Model):
                 'user_agent': request.META.get('HTTP_USER_AGENT', ''),
                 'ip_address': request.META.get('REMOTE_ADDR', ''),
                 'referer': request.META.get('HTTP_REFERER', ''),
+                'contact_type': contact_type,
             }
             t = now() - timedelta(hours=1)
             if not self.clients.filter(**params).filter(visited__gt=t):
@@ -98,7 +99,7 @@ class Mail(models.Model):
         a link in this email. It tries to execute the on_landing method on the
         person object and on the group object.
         """
-        self.mark_viewed(request)
+        self.mark_viewed(request, contact_type='link')
         if hasattr(self.person, 'on_landing') and hasattr(self.person.on_landing, '__call__'):
             self.person.on_landing(request)
         if self.job.content_type is not None and \
