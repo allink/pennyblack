@@ -334,7 +334,7 @@ class JobStatisticAdmin(admin.ModelAdmin):
     def user_agents_view(self, request, object_id):
         from pennyblack.models import EmailClient
         obj = self.get_object(request, unquote(object_id))
-        user_agents = EmailClient.objects.filter(mail__job_id=obj.id).values('user_agent').annotate(count=models.Count('user_agent')).order_by('-count')
+        user_agents = EmailClient.objects.filter(mail__job__id=obj.id).values('user_agent').annotate(count=models.Count('user_agent')).order_by('-count')
         context = {
             'object': obj,
             'opts': self.model._meta,
