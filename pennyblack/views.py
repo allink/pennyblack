@@ -13,6 +13,14 @@ from django.utils.functional import wraps
 from pennyblack.models import Newsletter, Link, Mail, Job
 
 
+class HttpResponseRedirectWithMailto(HttpResponseRedirect):
+    """
+    Links in emails could contain mailto links which we should
+    not block in the redirect_link view.
+    """
+    allowed_schemes = ['http', 'https', 'ftp', 'mailto']
+
+
 def needs_mail(function):
     """
     Decorator to get the mail object
@@ -85,7 +93,7 @@ def redirect_link(request, mail, link):
         query = urlencode(parsed_query, True)
     # reassemble the url
     target = urlunparse((scheme, netloc, path, params, query, fragment))
-    response = HttpResponseRedirect(target)
+    response = HttpResponseRedirectWithMailto(target)
     try:
         response.allowed_schemes = response.allowed_schemes + ['mailto']
     except AttributeError:
