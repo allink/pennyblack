@@ -28,7 +28,7 @@ else:
 # Job
 #-----------------------------------------------------------------------------
 class Job(models.Model):
-    """A bunch of participants wich receive a newsletter"""
+    """A bunch of participants which receive a newsletter"""
     newsletter = models.ForeignKey('pennyblack.Newsletter', related_name="jobs", null=True)
     status = models.IntegerField(choices=settings.JOB_STATUS, default=1)
     date_created = models.DateTimeField(verbose_name=_("created"), default=now)
