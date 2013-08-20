@@ -5,7 +5,12 @@ from django.db import models
 from pennyblack import settings
 from pennyblack.options import NewsletterReceiverMixin, JobUnitMixin, JobUnitAdmin
 
-from django.utils.timezone import now
+try:
+    from django.utils.timezone import now
+except ImportError:
+    from datetime import datetime
+    now = datetime.now
+
 
 
 class NewsletterSubscriberManager(models.Manager):
