@@ -5,7 +5,12 @@ from django.db import models
 from pennyblack import settings
 from pennyblack.options import NewsletterReceiverMixin, JobUnitMixin, JobUnitAdmin
 
-import datetime
+try:
+    from django.utils.timezone import now
+except ImportError:
+    from datetime import datetime
+    now = datetime.now
+
 
 
 class NewsletterSubscriberManager(models.Manager):
@@ -41,7 +46,7 @@ class NewsletterSubscriber(models.Model, NewsletterReceiverMixin):
     groups = models.ManyToManyField('subscriber.SubscriberGroup', verbose_name="Groups",
                                     related_name='subscribers')
     date_subscribed = models.DateTimeField(verbose_name="Subscribe Date",
-                                           default=datetime.datetime.now())
+                                           default=now)
     mails = generic.GenericRelation('pennyblack.Mail')
     is_active = models.BooleanField(verbose_name="Active", default=True)
 
