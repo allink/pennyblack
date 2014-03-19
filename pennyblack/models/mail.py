@@ -5,8 +5,9 @@ from rfc822 import dump_address_pair
 from django.contrib import admin
 from django.contrib.contenttypes import generic
 from django.core import mail
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import NoReverseMatch, reverse
-from django.core.validators import email_re
+from django.core.validators import validate_email
 from django.db import models
 from django.http import HttpRequest
 from django.template.loader import render_to_string
@@ -125,7 +126,11 @@ class Mail(models.Model):
         """
         Checks if this Mail is valid by validating the email address.
         """
-        return email_re.match(self.person.get_email())
+        try:
+            validate_email(self.person.get_email())
+        except ValidationError:
+            return False
+        return True
 
     def get_email(self):
         """

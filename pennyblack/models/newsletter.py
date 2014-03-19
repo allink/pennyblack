@@ -1,8 +1,7 @@
 # coding=utf-8
 import mimetypes
-import os
 
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib import admin
