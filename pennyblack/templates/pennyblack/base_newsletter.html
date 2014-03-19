@@ -23,7 +23,7 @@
               <td align="center" bgcolor="#FFFFFF">
               <table width="630" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td align="right">{% trans "To view this email as a web page, click" %} <a href="{{newsletter.get_base_url}}{% url pennyblack.view mail.mail_hash %}">{% trans "here" %}</a></td>
+                  <td align="right">{% trans "To view this email as a web page, click" %} <a href="{{newsletter.get_base_url}}{% url "pennyblack.view" mail.mail_hash %}">{% trans "here" %}</a></td>
                 </tr>
               </table></td>
             </tr>
