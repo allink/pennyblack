@@ -13,7 +13,10 @@ from feincms.module.medialibrary.models import MediaFile
 
 import re
 import os
-import Image
+try:
+    import Image
+except:
+    from PIL import Image
 import exceptions
 
 HREF_RE = re.compile(r'href\="((\{\{[^}]+\}\}|[^"><])+)"')
