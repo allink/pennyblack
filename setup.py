@@ -40,7 +40,7 @@ setup(
         'Django(>=1.3)',
         'pydns',
         'pyspf',
-        'pil',
+        'pillow',
     ],
     include_package_data=True,    
 )
